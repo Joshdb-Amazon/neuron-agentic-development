@@ -1,10 +1,10 @@
 ---
 name: neuron-nki-profiling
 description: |
-  This skill guides profiling NKI kernels to analyze performance on Neuron hardware.
-  Use when encountering "profile kernel", "capture execution trace", "analyze kernel performance",
-  "generate NEFF", "run neuron-explorer", "view neuron-explorer", "get summary-json",
-  or asking "how to profile NKI kernel", "why is my kernel slow".
+  This skill guides using the cli to generate NKI kernel profiles (NEFF + NTFF pairs) to analyze performance on Neuron hardware.
+  Use when encountering "profile kernel", "capture execution trace",
+  "generate NEFF", "get summary-json",
+  or asking "how to profile NKI kernel".
 argument-hint: "[kernel file]"
 ---
 
@@ -69,10 +69,10 @@ os.environ['NEURON_RT_INSPECT_DEVICE_PROFILE'] = '1'
 os.environ['NEURON_RT_INSPECT_OUTPUT_DIR'] = './output'
 
 # Compiler flags for target hardware
-os.environ['NEURON_CC_FLAGS'] = '--target trn2 --lnc 1'
+os.environ['NEURON_CC_FLAGS'] = '--target trn2 --lnc 1' # use lnc=2 if explicitely told to.  
 
-# Pin to a specific neuron core to avoid conflicts with concurrent sessions
-os.environ['NEURON_RT_VISIBLE_CORES'] = '0'
+# Pin to a specific neuron core(s) to avoid conflicts with concurrent sessions
+os.environ['NEURON_RT_VISIBLE_CORES'] = '0' # '0,1', '0-1'
 ```
 
 | Environment Variable | Description |
@@ -122,10 +122,10 @@ Organize profile iterations:
 ./profiles/
 ├── run_001/              # Baseline profiling
 │   ├── profile.ntff
-│   └── profile.pftrace
+│   └── metrics.json
 ├── run_002/              # After first optimization
 │   ├── profile.ntff
-│   └── profile.pftrace
+│   └── metrics.json
 └── run_003/              # After second optimization
 ```
 
@@ -197,32 +197,10 @@ neuron-explorer view \
     -s ./profiles/run_001/profile.ntff > ./profiles/run_001/metrics.json
 ```
 
-### Step 6: Generate Perfetto Trace
+### Step 6: Querying the profile and/or profile analysis (optional)
 
-For detailed timeline visualization, generate a Perfetto trace:
-
-```bash
-neuron-explorer view \
-    --output-format perfetto \
-    -n $NEFF_PATH \
-    -s ./profiles/run_001/profile.ntff > ./profiles/run_001/profile.pftrace
-```
-
-### Step 7: Visualize with Perfetto UI (Optional)
-
-Use the included setup script to launch a local Perfetto trace processor:
-
-```bash
-# From the skill's scripts directory
-./scripts/setup-perfetto.sh ./profiles/run_001/profile.pftrace
-```
-
-Then open https://ui.perfetto.dev and click "Open trace processor (RPC)" to load from localhost.
-
-The script:
-1. Downloads the Perfetto trace processor if not present
-2. Launches it with `--httpd` flag
-3. Serves the trace file for the web UI
+For detailed analysis of the kernel profile, use the /neuron-nki-profile-querying skill. It allows for high level performance bounds analysis, as well as zoomed in, instruction level
+investigation of specific inefficiencies through python on parquet. 
 
 ## Output Directory Structure
 
@@ -240,7 +218,7 @@ Understanding the generated file structure:
 ./profiles/                                  # Organized profile iterations
 ├── run_001/
 │   ├── profile.ntff                        # Execution trace
-│   └── profile.pftrace                     # Perfetto trace (optional)
+│   └── metrics.json                        # Summary metrics
 ├── run_002/
 │   └── ...
 ```
@@ -278,17 +256,7 @@ NEFF_PATH=$(python3 scripts/identify-neffs.py ./output/i-*_pid_*/ matmul_relu)
 | `hbm_write_bytes` | HBM write traffic | Minimize |
 | `mm_arithmetic_intensity` | FLOPs per byte of memory traffic | Compare to peak ratio |
 
-See [references/metrics-reference.md](references/metrics-reference.md) for complete metrics documentation and [references/optimization-insights.md](../neuron-nki-optimizing/references/optimization-insights.md) for optimization guidance.
-
-## Bottleneck Identification
-
-| Bottleneck Type | Key Indicators | Primary Solutions |
-|-----------------|----------------|-------------------|
-| **DMA-bound** | Low TensorE utilization, high DMA time | Increase tile size, use double buffering |
-| **Compute-bound** | High TensorE (>90%), low DMA wait | Often optimal; consider FP8 on gen3+ |
-| **Sync-bound** | Low utilization everywhere | Batch operations, use affine_range |
-
-See [references/optimization-insights.md](../neuron-nki-optimizing/references/optimization-insights.md) for comprehensive optimization strategies, metric-to-fix mappings, and case studies.
+See [references/optimization-insights.md](../neuron-nki-optimizing/references/optimization-insights.md) for optimization guidance.
 
 ## Comparing Optimization Iterations
 
@@ -348,12 +316,12 @@ See `examples/basic-profiling-workflow.py` for a complete end-to-end profiling s
 | `/neuron-nki-optimizing` | Apply optimizations based on profiling data |
 | `/neuron-nki-debugging` | Debug compilation errors |
 | `/neuron-nki-docs` | Look up API documentation |
+| `/neuron-nki-profile-querying` | Detailed profile analysis |
 
 ## References
 
 | Reference | Purpose |
 |-----------|---------|
-| [metrics-reference.md](references/metrics-reference.md) | Complete metric definitions with architectural context |
 | [optimization-insights.md](../neuron-nki-optimizing/references/optimization-insights.md) | Optimization strategies, case studies, and profiling-driven workflow |
 | [bottleneck-analysis.md](../neuron-nki-optimizing/references/bottleneck-analysis.md) | Detailed bottleneck identification guidance |
 
@@ -381,12 +349,6 @@ See `examples/basic-profiling-workflow.py` for a complete end-to-end profiling s
 - Add `--enable-dge-notifs` for detailed DMA analysis
 - Verify kernel ran successfully before profiling
 - Check NTFF file size is non-trivial: `ls -lh profile.ntff`
-
-**Perfetto trace viewer not connecting:**
-- Ensure trace_processor is running: `ps aux | grep trace_processor`
-- Check no firewall blocking localhost connections
-- Try restarting the trace processor with the script
-- Verify .pftrace file is valid: `file profile.pftrace`
 
 **Latency varies between runs:**
 - Use `--profile-nth-exec=2` or higher to skip warmup

@@ -98,7 +98,7 @@ def _resolve_agent_specs(dest):
 
 def _find_artifact_src():
     """Locate artifact source: bundled artifacts/ or repo root."""
-    # Bundled artifacts (wheel install or brazil-build)
+    # Bundled artifacts (wheel install or build)
     bundled = Path(__file__).parent / "artifacts"
     if bundled.exists():
         return bundled

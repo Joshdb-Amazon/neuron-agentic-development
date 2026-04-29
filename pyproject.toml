@@ -1,12 +1,15 @@
 [build-system]
 requires = ["setuptools>=64", "wheel"]
-build-backend = "setuptools.build_meta"
+build-backend = "_build_backend"
+backend-path = ["."]
 
 [project]
 name = "neuron-agentic-development"
 version = "1.0"
 description = "AI agents and skills for developing on AWS Neuron (Trainium/Inferentia) hardware"
 requires-python = ">=3.9"
+license = {file = "LICENSE.txt"}
+readme = "README.md"
 
 [project.scripts]
 deploy-neuron-agentic-development-to-kiro = "neuron_agentic_development.deploy:deploy_to_kiro"

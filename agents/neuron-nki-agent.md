@@ -42,11 +42,10 @@ skills:
   - neuron-nki-writing
   - neuron-nki-debugging
   - neuron-nki-docs
-  - neuron-nki-optimizing
   - neuron-nki-profiling
   - neuron-nki-profile-querying
-  - neuron-nki-migrating
-  - experimental-perfetto-explorer-query
+
+
 ---
 
 # NKI Agent
@@ -65,9 +64,6 @@ Determine which workflow to use based on the request:
 |-------------|----------|------------|
 | Write new kernel or modify existing | [Write](#write) | `/neuron-nki-writing`, `/neuron-nki-docs` |
 | Fix compilation errors | [Debug](#debug) | `/neuron-nki-debugging`, `/neuron-nki-docs` |
-| Improve kernel performance | [Optimize](#optimize) | `/neuron-nki-optimizing`, `/neuron-nki-profiling`, `/neuron-nki-profile-querying` |
-| Migrate between API versions | [Migrate](#migrate) | `/neuron-nki-migrating` |
-| Analyze Perfetto traces | [Analyze Trace](#analyze-trace) | `/experimental-perfetto-explorer-query` |
 | Query profile data with SQL | [Query Profile](#query-profile) | `/neuron-nki-profile-querying` |
 | Look up API/error docs | [Explore Docs](#explore-docs) | `/neuron-nki-docs` |
 
@@ -106,41 +102,6 @@ Common fixes:
 Max 10 iterations. Save backup before starting: `cp {kernel_file} {kernel_file}.pre-debug`
 
 After fixing, produce a structured debugging report with error analysis, changes applied, trade-offs, and artifacts.
-
-## Optimize
-
-Iterative optimization loop: profile → analyze → optimize → validate → repeat.
-
-1. **Check for profile** — look for `./profiles/run_*/metrics.json`. If none exists, invoke `/neuron-nki-profiling {kernel_file}`
-2. **Classify bottleneck:**
-   - `tensor_pct >= 80%` → COMPUTE-BOUND (already optimal)
-   - `dma_pct >= 50% AND gap_ratio > 50%` → DMA-BOUND
-   - `tensor_pct < 50% AND dma_pct < 50%` → SYNC-BOUND
-   - else → MIXED
-3. **Deep-dive with SQL** — use `/neuron-nki-profile-querying` to run targeted queries against the profile (instruction breakdown, DMA packet analysis, source line hotspots) for precise bottleneck attribution
-4. **Save version** to `./kernels/kernel_v{N}.py` before changes
-4. **Apply ONE targeted optimization** based on bottleneck type
-5. **Validate accuracy** with appropriate tolerances (float32: rtol=1e-5, bfloat16: rtol=1e-2, float16: rtol=1e-3)
-6. **Re-profile** and compare metrics
-7. **Track progress** in `OPTIMIZATION_LOG.md`
-
-Stop when TensorEngine >= 80% or user indicates completion. One change at a time to attribute improvements correctly.
-
-**DMA-BOUND strategies:** increase tile sizes, add double buffering/prefetching, ensure contiguous access.
-**SYNC-BOUND strategies:** batch operations, use `nl.affine_range` for parallel iterations, reduce cross-engine dependencies.
-
-## Migrate
-
-Systematic migration between NKI API versions:
-
-1. **Analyze kernel** — determine migration type by comparing against `skills/neuron-nki-writing/references/nki-language-constraint.md` to identify deprecated patterns
-2. **Save backup:** `cp {kernel_file} {kernel_file}.pre-migration`
-3. **Apply transformations** systematically using `/neuron-nki-migrating` patterns
-4. **Test compilation** — if fails, invoke `/neuron-nki-debugging`
-5. **Validate numerical correctness** (MANDATORY) — compare against original kernel or PyTorch reference
-6. **Generate migration report** with all changes, compilation result, validation status, and artifacts
-
-Migration is NOT complete until numerical validation passes.
 
 ## Analyze Trace
 

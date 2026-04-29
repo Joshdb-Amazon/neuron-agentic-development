@@ -7,7 +7,6 @@ This example demonstrates the complete workflow for profiling an NKI kernel:
 3. Create dedicated profile folder
 4. Capture profile with neuron-explorer
 5. View results with neuron-explorer
-6. (Optional) Generate Perfetto trace for visualization
 
 Run this script on Trainium/Inferentia hardware with the NKI venv activated.
 """
@@ -134,28 +133,6 @@ print(f"\nView command (run after capture):\n  {view_cmd}")
 
 
 # =============================================================================
-# Step 6: Generate Perfetto trace command (optional)
-# =============================================================================
-
-perfetto_path = profile_dir / 'profile.pftrace'
-perfetto_cmd = f"neuron-explorer view --output-format perfetto -n {neff_path} -s {ntff_path} > {perfetto_path}"
-print(f"\nPerfetto trace command (optional):\n  {perfetto_cmd}")
-
-
-# =============================================================================
-# Step 7: Visualize with Perfetto (optional)
-# =============================================================================
-
-print(f"""
-To visualize the Perfetto trace:
-  1. Run the Perfetto trace command above
-  2. Launch: ./scripts/setup-perfetto.sh {perfetto_path}
-  3. Open https://ui.perfetto.dev
-  4. Click "Open trace processor (RPC)" to load from localhost
-""")
-
-
-# =============================================================================
 # Summary
 # =============================================================================
 
@@ -176,8 +153,5 @@ PROFILING WORKFLOW SUMMARY
 4. Next steps (run manually):
    a. Capture profile: neuron-explorer capture -n <neff> -s <ntff> --profile-nth-exec=2 --enable-dge-notifs
    b. View JSON results: neuron-explorer view --output-format summary-json -n <neff> -s <ntff>
-   c. (Optional) Generate Perfetto: neuron-explorer view --output-format perfetto -n <neff> -s <ntff> > profile.pftrace
-   d. (Optional) Visualize: ./scripts/setup-perfetto.sh profile.pftrace
-
 =============================================================================
 """)

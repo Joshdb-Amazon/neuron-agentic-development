@@ -1,5 +1,5 @@
 # Neuron Agentic Development
-This repository contains AI agents and skills for developing on [AWS Neuron](https://awsdocs-neuron.readthedocs-hosted.com/) (Trainium/Inferentia) hardware, including NKI kernel development, profiling and debugging. For an overview of Neuron Agentic Development and the tools it offers for agent-enabled workflows with Neuron, see [the overview of Neuron Agentic Development in the the public Neuron docs](https://awsdocs-neuron-staging.readthedocs-hosted.com/en/latest/about-neuron/agentic-development-overview.html).
+This repository contains AI agents and skills for developing on [AWS Neuron](https://awsdocs-neuron.readthedocs-hosted.com/) (Trainium/Inferentia) hardware, including NKI kernel development, profiling and debugging. For an overview of Neuron Agentic Development and the tools it offers for agent-enabled workflows with Neuron, see [the overview of Neuron Agentic Development in the the public Neuron docs](https://awsdocs-neuron.readthedocs-hosted.com/en/latest/about-neuron/agentic-development-overview.html).
 
 ## Installation
 
@@ -7,17 +7,19 @@ This repository contains AI agents and skills for developing on [AWS Neuron](htt
 # from neuron pypi repository
 pip install --upgrade neuron-agentic-development \
     --extra-index-url https://pip.repos.neuron.amazonaws.com
-    
+
+
+# from wheel
+pip install neuron_agentic_development-1.0-py3-none-any.whl
+
 # from local github clone
 git clone https://github.com/aws-neuron/neuron-agentic-development.git
 cd neuron-agentic-development
 
 pip install .
-```
 
-Then deploy to your preferred tool:
+# Then deploy to your preferred tool:
 
-```bash
 deploy-neuron-agentic-development-to-kiro
 # or
 deploy-neuron-agentic-development-to-claude
@@ -28,7 +30,7 @@ deploy-neuron-agentic-development-to-claude
 | Agent | Description |
 |-------|-------------|
 | [neuron-nki-agent](agents/neuron-nki-agent.md) | Unified NKI kernel development agent. Full lifecycle: writing kernels from PyTorch/NumPy/natural language, debugging compilation errors, profiling performance, optimizing bottlenecks, migrating between API versions, analyzing Perfetto traces, and NKI documentation lookup. |
-| [neuron-nki-writer-agent](agents/neuron-nki-writer-agent.md) | NKI kernel authoring and modification. Translates from PyTorch/NumPy/natural language, adds shape/dtype support, refactors tiling strategies, and implements new features following Beta 2 API patterns. |
+| [neuron-nki-writer-agent](agents/neuron-nki-writer-agent.md) | NKI kernel authoring and modification. Translates from PyTorch/NumPy/natural language, adds shape/dtype support, refactors tiling strategies, and implements new features following Beta 3 API patterns. |
 | [neuron-nki-debugger-agent](agents/neuron-nki-debugger-agent.md) | Autonomous NKI kernel compilation error debugging. Analyzes compiler errors, searches documentation and code examples for fixes, applies corrections following simplicity over performance, and validates fixes. |
 | [neuron-nki-profile-analysis-agent](agents/neuron-nki-profile-analysis-agent.md) | Profile and analyze NKI kernels on Neuron hardware. Captures execution traces, computes performance bounds, identifies bottleneck engines, and runs investigations to localize inefficiencies to NKI source lines. |
 

@@ -159,7 +159,7 @@ Used across all stages of development. Provides API signatures and tutorials dur
 ## Things to Know
 
 - Profiling and debugging skills require execution on actual Trainium/Inferentia hardware. The writing and docs skills work anywhere.
-- All skills target the current NKI Beta 3 API.
+- All skills target the current NKI Beta 0.3.0 API.
 - Skills support Trainium 1 (gen2), Trainium 2 (gen3), and Trainium 3 (gen4) with appropriate `--target` flags.
 - Skills and agents are designed to work together: the top-level agent automatically invokes profiling and debugging skills as needed.
 
