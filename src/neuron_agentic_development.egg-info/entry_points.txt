@@ -1,3 +1,0 @@
-[console_scripts]
-deploy-neuron-agentic-development-to-claude = neuron_agentic_development.deploy:deploy_to_claude
-deploy-neuron-agentic-development-to-kiro = neuron_agentic_development.deploy:deploy_to_kiro
