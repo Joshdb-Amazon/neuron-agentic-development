@@ -1,0 +1,32 @@
+{
+  "clientConfig": {
+    "kiroCli": {
+      "allowedTools": [
+        "fs_read",
+        "fs_write",
+        "grep",
+        "glob",
+        "execute_bash",
+        "todo_list"
+      ],
+      "tools": [
+        "@builtin"
+      ]
+    }
+  },
+  "config": {
+    "description": "Profile and analyze NKI kernels on Neuron hardware. Captures execution traces, computes performance bounds, identifies bottleneck engines, and runs investigations to localize inefficiencies to NKI source lines.",
+    "model": "claude-opus-4.6",
+    "systemPrompt": "{{aim:include:agents/neuron-nki-profile-analysis-agent.md}}"
+  },
+  "dependencies": {
+    "skills": {
+      "skillNames": [
+        "neuron-nki-profiling",
+        "neuron-nki-profile-querying"
+      ]
+    }
+  },
+  "name": "neuron-nki-profile-analysis-agent",
+  "schemaVersion": "1"
+}

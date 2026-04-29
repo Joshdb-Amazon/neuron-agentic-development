@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "neuron-agentic-development"
+version = "1.0"
+description = "AI agents and skills for developing on AWS Neuron (Trainium/Inferentia) hardware"
+requires-python = ">=3.9"
+
+[project.scripts]
+deploy-neuron-agentic-development-to-kiro = "neuron_agentic_development.deploy:deploy_to_kiro"
+deploy-neuron-agentic-development-to-claude = "neuron_agentic_development.deploy:deploy_to_claude"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["neuron_agentic_development*"]
+
+[tool.setuptools.package-data]
+neuron_agentic_development = ["artifacts/**/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["test"]
+pythonpath = ["src"]
