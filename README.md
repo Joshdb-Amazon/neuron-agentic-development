@@ -4,13 +4,6 @@ This repository contains AI agents and skills for developing on [AWS Neuron](htt
 ## Installation
 
 ```bash
-# from neuron pypi repository
-pip install --upgrade neuron-agentic-development \
-    --extra-index-url https://pip.repos.neuron.amazonaws.com
-
-
-# from wheel
-pip install neuron_agentic_development-1.0-py3-none-any.whl
 
 # from local github clone
 git clone https://github.com/aws-neuron/neuron-agentic-development.git
