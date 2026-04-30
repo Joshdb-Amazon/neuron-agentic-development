@@ -44,14 +44,8 @@ source ~/opt/aws_neuronx_venv_pytorch_2_9/bin/activate
 
 ## Step 3: Install Neuron Agentic Development
 
-**Option A — Install from Neuron PyPI repository:**
 
-```bash
-pip install --upgrade neuron-agentic-development \
-    --extra-index-url https://pip.repos.neuron.amazonaws.com
-```
-
-**Option B — Clone from GitHub (for customization or contribution):**
+### Clone from GitHub (for customization or contribution):**
 
 ```bash
 git clone https://github.com/aws-neuron/neuron-agentic-development.git
