@@ -46,6 +46,8 @@ def example_kernel(input_tensor):
 | `np.float32`, `np.add` inside kernels | `nl.float32`, `nl.add` |
 | `@nki.jit` on sub-functions | Remove decorator from helpers |
 
+**Mutable tensor annotations:** Use `import neuronxcc.nki.typing as nt` ONLY for annotating mutable output tensors in function signatures (caller allocates, kernel writes).
+
 ## Hard Rules — Beta 2 → NKI 0.3.0 (Violating ANY is a compilation failure)
 
 | NEVER use (Beta 2) | ALWAYS use (NKI 0.3.0) |

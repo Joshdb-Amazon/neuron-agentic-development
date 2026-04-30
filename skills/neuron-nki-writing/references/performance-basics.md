@@ -107,11 +107,7 @@ for i in nl.sequential_range(num_tiles):
 
 These techniques overlap memory transfers with compute to hide DMA latency. They are
 **out of scope for initial kernel writing** — write correct single-buffered code first,
-then apply these optimizations via `/neuron-nki-optimizing` based on profiling data.
-
-See [pipelining-patterns.md](../../neuron-nki-optimizing/references/pipelining-patterns.md) for
-concrete code patterns covering double buffering, multi-stage software pipelining, and
-engine-interleaved copy.
+then apply these optimizations based on profiling data.
 
 ## Memory Hierarchy Performance
 

@@ -16,21 +16,9 @@ argument-hint: "[operation, PyTorch/Numpy code, or existing kernel file]"
 
 This skill guides writing and modifying NKI (Neuron Kernel Interface) kernels — from new kernel creation (PyTorch/NumPy/natural language translation) to editing existing kernels (adding shape/dtype support, refactoring tiling, implementing new features). Focus on correctness using documented APIs.
 
-## Critical: Beta 2 API Requirements
+## Critical: NKI Language Constraints
 
-NKI Beta 2 introduced breaking changes. Use ONLY the new API:
-
-| Feature | Correct (Beta 2) | Wrong (Deprecated) |
-|---------|------------------|-------------------|
-| Imports | `import nki`, `import nki.isa as nisa`, `import nki.language as nl` | `import neuronxcc.nki.*` |
-| Memory ops | `nisa.dma_copy(dst=tile, src=hbm)` | `nl.load()`, `nl.store()` |
-| ISA functions | `nisa.reciprocal(dst=result, data=x)` | `result = nisa.reciprocal(x)` |
-| Indexing | `tensor[start:end, :]` slicing, `nl.ds()` for dynamic | `nl.mgrid[]`, `nl.arange()` |
-| Strided access | `TensorView.slice(step=N)` or `.ap()` | N/A |
-| Dynamic slices | `nl.ds(offset, size)` | N/A |
-| Bounds handling | `min(end, start + size)` | `mask=(i_p < 128)` |
-
-**Mutable tensor annotations:** Use `import neuronxcc.nki.typing as nt` ONLY for annotating mutable output tensors in function signatures.
+BEFORE writing any NKI code, read `references/nki-language-constraint.md` for the complete list of required and forbidden API patterns covering both Beta 1 → Beta 2 and Beta 2 → NKI 0.3.0 migration rules. Violating ANY rule is a compilation failure.
 
 ## Quick Start
 
@@ -144,7 +132,7 @@ For simple kernels (single operation, few tiles), comparing the final output aga
 
 This catches translation errors early — a mismatch in the final output of a 5-stage kernel is much harder to diagnose than a mismatch after stage 2.
 
-Use multiple complementary checks (atol/rtol, max absolute difference, tensor norm of the difference, cosine similarity) rather than relying on a single metric. See the accuracy validation reference in `/neuron-nki-optimizing` for detailed methodology.
+Use multiple complementary checks (atol/rtol, max absolute difference, tensor norm of the difference, cosine similarity) rather than relying on a single metric.
 
 ## Hardware Constraints Quick Reference
 
@@ -197,6 +185,7 @@ For detailed code examples, anti-patterns, and production patterns (cumsum, rmsn
 References are tiered to minimize overhead on simple tasks. Load only what you need based on the Complexity Assessment above.
 
 ### Always load (core references):
+- `references/nki-language-constraint.md` - **MANDATORY**: Required and forbidden API patterns for NKI 0.3.0, reference kernel template
 - `references/common-patterns.md` - Full code examples: matmul PSUM accumulation, fused ScalarE, associative scan, production patterns
 - `references/api-translation.md` - PyTorch/NumPy to NKI operation mapping
 - `references/kernel-template.md` - Standard kernel template with self-contained utilities
@@ -250,7 +239,6 @@ Full source for nkilib/core utilities and subkernels:
 | `SbufManager` | 4+ SBUF tensors or sub-functions sharing SBUF | `references/nkilib/core/allocator.md` |
 
 **Specialized:** `TiledDimInfo` (subtile metadata), `tp_broadcast` (P→F broadcast, very rare).
-**Advanced** (for `/neuron-nki-optimizing`): `ModularAllocator`, `interleave_copy`, head-packing, fused-ops.
 
 ### Decision Flowchart
 
@@ -434,19 +422,6 @@ else:
     column_tiling_dim = 128  # Large T: use 128
 ```
 
-### 6. Out of Scope (Advanced Techniques)
-
-The following are NOT part of initial kernel writing. Write a correct, single-buffered kernel first,
-then use `/neuron-nki-optimizing` to apply these techniques based on profiling data:
-- Multi-buffering / double-buffering
-- Software pipelining (`ModularAllocator`, `interleave_copy`)
-- Explicit DMA/compute overlap
-- Bank conflict optimization
-- Head packing for attention output projections
-- Fused residual add + normalization patterns
-
-See `/neuron-nki-optimizing` for concrete code patterns and reference materials.
-
 
 ## Related Skills
 
@@ -455,3 +430,4 @@ See `/neuron-nki-optimizing` for concrete code patterns and reference materials.
 | `/neuron-nki-docs` | Look up specific API documentation |
 | `/neuron-nki-debugging` | Debug compiler errors on device |
 | `/neuron-nki-profiling` | Profile kernel performance |
+| `/neuron-nki-profile-querying` | Query and analyze kernel profile data |

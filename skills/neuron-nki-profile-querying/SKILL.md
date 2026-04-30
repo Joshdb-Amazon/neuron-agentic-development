@@ -430,6 +430,6 @@ lsof -i :3002 | head -5
 | Skill | Purpose |
 |-------|---------|
 | `/neuron-nki-profiling` | Capture NEFF/NTFF on hardware |
-| `/neuron-nki-analyzing-profile-visual` | Visual timeline exploration with screenshots |
-| `/experimental-perfetto-explorer-query` | SQL analysis of Perfetto traces |
-| `/neuron-nki-optimizing` | Apply optimizations based on query results |
+| `/neuron-nki-writing` | Write NKI kernels |
+| `/neuron-nki-debugging` | Debug compilation errors |
+| `/neuron-nki-docs` | Look up API documentation |

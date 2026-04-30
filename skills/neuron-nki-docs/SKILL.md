@@ -7,7 +7,6 @@ description: |
   "look up <symbol>", or needs any NKI documentation reference.
 argument-hint: "[query or API name]"
 context: fork
-agent: neuron-nki-explorer-agent
 ---
 
 Research $ARGUMENTS thoroughly:
@@ -190,5 +189,4 @@ The full index is in `debugging/error-codes-index.md` with individual files in `
 | `/neuron-nki-writing` | Write NKI kernels from specifications |
 | `/neuron-nki-debugging` | Debug compiler errors on device |
 | `/neuron-nki-profiling` | Profile kernel performance |
-| `/neuron-nki-optimizing` | Optimize kernel based on profiling |
-| `/neuron-nki-migrating` | Migrate kernels between NKI versions |
+| `/neuron-nki-profile-querying` | Query and analyze kernel profile data |

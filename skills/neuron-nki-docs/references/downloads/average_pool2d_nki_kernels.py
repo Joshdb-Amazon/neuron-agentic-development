@@ -5,7 +5,6 @@ NKI implementation for average pool 2D NKI tutorial.
 
 NOTE: This example uses deprecated Beta 1 patterns (nl.mgrid, nl.load, nl.store).
 For Beta 2 migration guidance, see:
-- /home/ubuntu/nki-dev-suite-cc/nki-dev-suite/skills/neuron-nki-migrating/references/beta1-to-beta2.md
 - Specifically the nl.mgrid migration patterns and load/store → dma_copy transformations
 
 Key changes needed for full Beta 2 compliance:

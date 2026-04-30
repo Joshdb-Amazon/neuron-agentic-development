@@ -256,8 +256,6 @@ NEFF_PATH=$(python3 scripts/identify-neffs.py ./output/i-*_pid_*/ matmul_relu)
 | `hbm_write_bytes` | HBM write traffic | Minimize |
 | `mm_arithmetic_intensity` | FLOPs per byte of memory traffic | Compare to peak ratio |
 
-See [references/optimization-insights.md](../neuron-nki-optimizing/references/optimization-insights.md) for optimization guidance.
-
 ## Comparing Optimization Iterations
 
 When optimizing a kernel, compare metrics across iterations:
@@ -286,8 +284,6 @@ echo "Optimized: $(jq .latency ./profiles/optimized/metrics.json)"
 
 Keep notes on what changed between iterations to correlate optimizations with metric improvements.
 
-For detailed optimization strategies and real case studies, see [references/optimization-insights.md](../neuron-nki-optimizing/references/optimization-insights.md).
-
 ## Complete Example
 
 See `examples/basic-profiling-workflow.py` for a complete end-to-end profiling script demonstrating all steps: environment setup, kernel execution, NEFF identification, profile capture, and JSON metric extraction.
@@ -312,18 +308,10 @@ See `examples/basic-profiling-workflow.py` for a complete end-to-end profiling s
 
 | Skill | Purpose |
 |-------|---------|
-| `/experimental-perfetto-explorer-query <trace> [concern]` | Deep trace analysis with SQL queries |
-| `/neuron-nki-optimizing` | Apply optimizations based on profiling data |
+| `/neuron-nki-profile-querying` | Detailed profile querying and analysis |
 | `/neuron-nki-debugging` | Debug compilation errors |
 | `/neuron-nki-docs` | Look up API documentation |
-| `/neuron-nki-profile-querying` | Detailed profile analysis |
-
-## References
-
-| Reference | Purpose |
-|-----------|---------|
-| [optimization-insights.md](../neuron-nki-optimizing/references/optimization-insights.md) | Optimization strategies, case studies, and profiling-driven workflow |
-| [bottleneck-analysis.md](../neuron-nki-optimizing/references/bottleneck-analysis.md) | Detailed bottleneck identification guidance |
+| `/neuron-nki-writing` | Write NKI kernels |
 
 ## Troubleshooting
 
