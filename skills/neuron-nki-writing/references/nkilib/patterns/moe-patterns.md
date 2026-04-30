@@ -176,7 +176,7 @@ Gather expert affinities based on expert indices using `local_gather` operation 
 - `nl.ndarray`: `[_pmax, 16, 16]` gathered affinities tensor
 
 **Constraints:**
-- `K <= 16` (PARTITIONS_PER_Q7_CORE)
+- `K <= 16` (PARTITIONS_PER_CORE)
 - `E > 1` (local_gather requires src_buffer_size > 1)
 
 **Notes:**
