@@ -82,9 +82,7 @@ def _copy_artifacts(src, dest):
             continue
         t = dest / d
         t.parent.mkdir(parents=True, exist_ok=True)
-        if t.exists():
-            shutil.rmtree(t)
-        shutil.copytree(s, t)
+        shutil.copytree(s, t, dirs_exist_ok=True)
         print(f"  {d}/ -> {t}")
 
 
