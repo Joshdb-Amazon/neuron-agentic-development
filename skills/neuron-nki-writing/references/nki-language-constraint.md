@@ -1,6 +1,6 @@
-# NKI Language Constraints — NKI 0.3.0 API (MANDATORY)
+# NKI Language Constraints — NKI 0.4.0 API (MANDATORY)
 
-All NKI code MUST use NKI 0.3.0 API exclusively. Beta 1 and deprecated Beta 2 patterns will NOT compile on current Neuron SDK (2.29.0+).
+All NKI code MUST use NKI 0.4.0 API exclusively. Beta 1, deprecated Beta 2, and removed NKI 0.3.0 patterns will NOT compile on current Neuron SDK (2.30.0+).
 
 ## Reference Kernel
 
@@ -74,7 +74,53 @@ def example_kernel(input_tensor):
 | `nisa.dma_compute(dst, srcs, scales, reduce_op)` (Beta 2 order) | `nisa.dma_compute(dst, srcs, reduce_op, scales=None, unique_indices=True)` |
 | `nisa.affine_select(dst, pattern, offset, ch_mul, ...)` (positional offset) | `nisa.affine_select(dst, pattern, ch_mul, on_true, on_false, offset=offset)` |
 
-### NKI 0.3.0 PSUM to HBM — Required Pattern
+## Hard Rules — NKI 0.3.0 → NKI 0.4.0 (Violating ANY is a compilation failure)
+
+| NEVER use (NKI 0.3.0) | ALWAYS use (NKI 0.4.0) |
+|---|---|
+| `nisa.dma_transpose` with mismatched src/dst ranks | `dst.shape` must match transposed `src.shape` exactly including rank |
+| `nisa.tensor_copy_dynamic_src(...)` | Removed. Use `nisa.tensor_copy()` with `.ap()` and `scalar_offset` |
+| `nisa.tensor_copy_dynamic_dst(...)` | Removed. Use `nisa.tensor_copy()` with `.ap()` and `scalar_offset` |
+| `import neuronxcc.nki` inside kernels | Now a **compilation error** (was warning). Use `import nki` |
+| `nl.tile_size.total_available_sbuf_size` | Deprecated. Use `nl.tile_size.sbuf_fmax_bytes` (per-partition) or `nl.tile_size.sbuf_size_bytes` (total) |
+
+### NKI 0.4.0 tile_size Bytes-Aware Constants
+
+New properties on `nl.tile_size` for SBUF/PSUM capacity checks:
+
+| Constant | Description |
+|----------|-------------|
+| `nl.tile_size.sbuf_size_bytes` | Total SBUF capacity across all 128 partitions, in bytes |
+| `nl.tile_size.sbuf_fmax` | Per-partition usable SBUF free dimension in FP32 elements |
+| `nl.tile_size.sbuf_fmax_bytes` | Per-partition usable SBUF free dimension in bytes |
+| `nl.tile_size.psum_fmax_bytes` | PSUM bank size in bytes |
+
+**CORRECT — use bytes-aware constants for capacity checks:**
+```python
+assert F * 4 <= nl.tile_size.sbuf_fmax_bytes  # Check per-partition SBUF capacity in bytes
+assert F <= nl.tile_size.sbuf_fmax            # Check per-partition SBUF capacity in elements
+```
+
+### NKI 0.4.0 `dma_transpose` Rank Matching — Required Pattern
+
+`nisa.dma_transpose` now enforces that `dst.shape` rank matches the transposed `src.shape` rank exactly.
+
+**FORBIDDEN — do NOT generate this code:**
+```python
+# FORBIDDEN: 3D dst with 4D src — rank mismatch
+src_4d = nl.ndarray((128, 1, 1, 4096), dtype=nl.float32, buffer=nl.sbuf)
+dst_3d = nl.ndarray((4096, 1, 128), dtype=nl.float32, buffer=nl.sbuf)
+nisa.dma_transpose(dst=dst_3d, src=src_4d, axes=(3, 1, 2, 0))  # FORBIDDEN: ranks differ
+```
+
+**CORRECT — match dst rank to src rank:**
+```python
+src_4d = nl.ndarray((128, 1, 1, 4096), dtype=nl.float32, buffer=nl.sbuf)
+dst_4d = nl.ndarray((4096, 1, 1, 128), dtype=nl.float32, buffer=nl.sbuf)
+nisa.dma_transpose(dst=dst_4d, src=src_4d, axes=(3, 1, 2, 0))
+```
+
+### PSUM to HBM — Required Pattern (NKI 0.3.0+)
 
 PSUM cannot be directly DMA-copied to HBM. Always copy through SBUF first.
 
@@ -90,7 +136,7 @@ nisa.tensor_copy(dst=sbuf_temp[0:TILE, 0:N], src=psum_tensor[0:TILE, 0:N])
 nisa.dma_copy(dst=hbm_tensor, src=sbuf_temp[0:TILE, 0:N])
 ```
 
-### NKI 0.3.0 Read-Modify-Write (Scatter-Add) — Required Pattern
+### Read-Modify-Write (Scatter-Add) — Required Pattern (NKI 0.3.0+)
 
 For ANY scatter-add, accumulation, or read-modify-write on HBM tensors, use `nisa.dma_compute`
 with `reduce_op`. Do NOT use manual load+add+store as a workaround.
@@ -120,7 +166,7 @@ for k_idx in range(K):
         )
 ```
 
-### NKI 0.3.0 Register Instructions — Required Pattern
+### Register Instructions — Required Pattern (NKI 0.3.0+)
 
 Register instructions (`register_alloc`, `register_move`, `register_load`, `register_store`) are
 used for **dynamic loop boundaries and while loop conditions** — they control engine sequencer
@@ -129,7 +175,7 @@ branching. They are NOT for adding constants to 2D tensors.
 **FORBIDDEN — do NOT generate this code:**
 ```python
 loop_reg = nisa.register_alloc()
-nisa.register_move(loop_reg, imm=10)  # FORBIDDEN: imm= removed in NKI 0.3.0
+nisa.register_move(loop_reg, imm=10)  # FORBIDDEN: imm= removed
 ```
 
 **CORRECT — allocate register with initial value directly:**
@@ -150,7 +196,7 @@ while reg:
     nisa.register_load(dst=reg, src=cond)
 ```
 
-### NKI 0.3.0 DGE Mode / Enum Constants — Required Pattern
+### DGE Mode / Enum Constants — Required Pattern (NKI 0.3.0+)
 
 Use named enums for all enum parameters. For hardware DGE mode, use the `dge_mode` parameter
 with `nisa.dge_mode.hwdge`.
@@ -168,7 +214,7 @@ nisa.dma_copy(dst=dst_tensor, src=src_tensor, dge_mode=nisa.dge_mode.hwdge)
 
 Available `nisa.dge_mode` enum values: `nisa.dge_mode.none`, `nisa.dge_mode.swdge`, `nisa.dge_mode.hwdge`
 
-### NKI 0.3.0 Dynamic Addressing — Required Pattern
+### Dynamic Addressing — Required Pattern (NKI 0.3.0+)
 
 Use `nisa.tensor_copy()` with `.ap()` (access pattern) and `scalar_offset` for dynamic addressing.
 Do NOT use legacy dynamic-copy APIs or invent helper APIs — they do not exist.

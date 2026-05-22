@@ -193,7 +193,7 @@ def tensor_exp_kernel_(in_tensor):
   in_tile = nl.ndarray((P_DIM, Y_SIZE), dtype=nl.float32, buffer=nl.sbuf)
   out_tile = nl.ndarray((P_DIM, Y_SIZE), dtype=nl.float32, buffer=nl.sbuf)
 
-  for k in nl.affine_range(in_tensor.shape[0] / nl.tile_size.pmax):
+  for k in range(in_tensor.shape[0] / nl.tile_size.pmax):
     # Generate tensor indices for the input/output tensors
     p_start = k * nl.tile_size.pmax
     i_p = nl.ds(p_start, nl.tile_size.pmax)
@@ -207,7 +207,7 @@ def tensor_exp_kernel_(in_tensor):
 ```
 
 
-The `nl.affine_range(2)` API call is similar to the Python `range` function, and you can think of it as returning `[0, 1]`. See [NKI iterator API](api/nki.language.md#nl-iterators) for a detailed discussion of various loop iterator options in NKI.
+The `range(2)` call returns `[0, 1]`, just as in standard Python.
 
 While the code above does handle `(256, 512)` tensors correctly, it is rather inflexible since it only supports an input shape of `(256, 512)`. Therefore, as a last step, we extend this kernel to handle varying input/output sizes:
 
@@ -239,7 +239,7 @@ def tensor_exp_kernel_(in_tensor):
   in_tile = nl.ndarray((P_DIM, sz_f), dtype=nl.float32, buffer=nl.sbuf)
   out_tile = nl.ndarray((P_DIM, sz_f), dtype=nl.float32, buffer=nl.sbuf)
 
-  for p in nl.affine_range(math.ceil(sz_p / P_DIM)):
+  for p in range(math.ceil(sz_p / P_DIM)):
     # Generate tensor indices for the input/output tensors
     p_start = p * P_DIM
     p_end = p_start + P_DIM

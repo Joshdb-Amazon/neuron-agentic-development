@@ -63,6 +63,10 @@ into float32 before performing the operators.
 | Reverse Square Root | nki.language.rsqrt | N |
 | Reciprocal | nki.language.reciprocal | N |
 | Absolute | nki.language.abs | N |
+| Absolute Maximum | nki.language.abs_max | N |
+| Absolute Minimum | nki.language.abs_min | N |
+| Square | nki.language.square | N |
+| Relu | nki.language.relu | N |
 | Power | nki.language.power | N |
 
 
@@ -100,6 +104,8 @@ the Scalar Engine will generate invalid output results.
 | Reciprocal | nki.language.reciprocal | ±[2^-42, 2^42] |
 | Sign | nki.language.sign | [-inf, inf] |
 | Absolute | nki.language.abs | [-inf, inf] |
+| PReLU | nki.language.prelu | [-inf, inf] |
+| Bypass (pass-through) | nki.language.bypass | [-inf, inf] |
 
 
 ## NKI Engine Selection for Operators Supported on Multiple Engines

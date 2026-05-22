@@ -84,10 +84,6 @@ This document provides a comprehensive hierarchical index of all NKI (Neuron Ker
 #### Advanced Kernels
 - [Fused Mamba](../programming/tutorials/fused_mamba.md) - State space model kernel
 
-#### Distributed Computing
-- [SPMD Tensor Addition](../programming/tutorials/spmd_tensor_addition.md) - Single Program Multiple Data basics
-- [Multi-Core SPMD Addition](../programming/tutorials/spmd_multiple_nc_tensor_addition.md) - Multi-NeuronCore SPMD
-
 #### Performance
 - [Kernel Optimization](../programming/tutorials/kernel-optimization.md) - Optimization techniques
 
@@ -102,7 +98,7 @@ This document provides a comprehensive hierarchical index of all NKI (Neuron Ker
 - [Profiling with Neuron Profile](../optimization/use-neuron-profile.md) - Using neuron-profile tool
 - [Deep Dives Overview](../optimization/deep-dives-overview.md) - In-depth optimization topics
 - [MXFP Matrix Multiplication](../optimization/mxfp-matmul.md) - Microscaling FP matmul optimization
-- [NKI Beta Versions](../optimization/nki-beta-versions.md) - Beta version information
+- [NKI Versions](../optimization/nki-beta-versions.md) - Version history (Beta 1, Beta 2, GA)
 
 ---
 
@@ -113,7 +109,8 @@ This document provides a comprehensive hierarchical index of all NKI (Neuron Ker
 - [NKI Release Notes](../reference/nki_rn.md) - Version history and changes
 
 ### 5.2 Migration Guides
-- [NKI Migration Guide](../reference/migration/nki-migration-guide.md) - Upgrading NKI versions
+- [NKI 0.3.0 Update Guide](../reference/migration/nki-030-update-guide.md) - Updating from NKI 0.2.0 to 0.3.0 (GA)
+- [NKI Migration Guide (Beta 1 to Beta 2)](../reference/migration/nki-migration-guide.md) - Upgrading from Beta 1 to Beta 2
 - [Block Dimension Migration Guide](../reference/migration/nki_block_dimension_migration_guide.md) - Block dimension changes
 
 ### 5.3 NKI Library Kernels

@@ -235,15 +235,15 @@ def matrix_multiply_kernel(lhsT, rhs):
   # Create a space for the result in HBM (uninitialized)
   result = nl.ndarray(shape=(M, N), dtype=lhsT.dtype, buffer=nl.shared_hbm)
 
-  # Use affine_range to loop over tiles
-  for m in nl.affine_range(M // TILE_M):
-    for n in nl.affine_range(N // TILE_N):
+  # Loop over tiles
+  for m in range(M // TILE_M):
+    for n in range(N // TILE_N):
       # Allocate a tensor in PSUM (uninitialized)
       result_tile = nl.ndarray(shape=(TILE_M, TILE_N),
                            dtype=nl.float32,
                            buffer=nl.psum)
 
-      for k in nl.affine_range(K // TILE_K):
+      for k in range(K // TILE_K):
         # Declare the tiles on SBUF (uninitialized)
         lhsT_tile = nl.ndarray(shape=(TILE_K, TILE_M),
                            dtype=lhsT.dtype,
@@ -383,12 +383,12 @@ def matrix_multiply_kernel(lhsT, rhs):
   assert K % TILE_K == 0, \
     f"Expected K, {K}, to be a multiple of the partition dimension max, {TILE_K}"
 
-  # Use affine_range to loop over tiles
-  for m in nl.affine_range(M // TILE_M):
+  # Loop over tiles
+  for m in range(M // TILE_M):
     # Load a whole column tiles from lhsT (with K * TILE_M numbers)
     # This corresponds to the whole row in the original lhs
     lhsT_tiles = []
-    for k in nl.affine_range(K // TILE_K):
+    for k in range(K // TILE_K):
       # Allocate space in SBUF for the tile (uninitialized)
       lhsT_tile = nl.ndarray(shape=(TILE_K, TILE_M),
                            dtype=lhsT.dtype,
@@ -400,10 +400,10 @@ def matrix_multiply_kernel(lhsT, rhs):
       # Append the tile to the list of tiles.
       lhsT_tiles.append(lhsT_tile)
 
-    for n in nl.affine_range(N // TILE_N):
+    for n in range(N // TILE_N):
       # Load a whole column tiles from rhs (with K * TILE_N numbers)
       rhs_tiles = []
-      for k in nl.affine_range(K // TILE_K):
+      for k in range(K // TILE_K):
         # Allocate space in SBUF for the tile (uninitialized)
         rhs_tile = nl.ndarray(shape=(TILE_K, TILE_N),
                           dtype=rhs.dtype,
@@ -419,7 +419,7 @@ def matrix_multiply_kernel(lhsT, rhs):
       result_tile = nl.ndarray(shape=(TILE_M, TILE_N),
                            dtype=nl.float32,
                            buffer=nl.psum)
-      for k in nl.affine_range(K // TILE_K):
+      for k in range(K // TILE_K):
         # Accumulate partial-sums into PSUM
         nisa.nc_matmul(dst=result_tile,
                    stationary=lhsT_tiles[k],
@@ -510,13 +510,13 @@ def matrix_multiply_kernel(lhsT, rhs):
   result = nl.ndarray(shape=(M, N), dtype=lhsT.dtype, buffer=nl.shared_hbm)
 
   # Loop over blocks over the M dimension
-  for m in nl.affine_range(M // BLOCK_M):
+  for m in range(M // BLOCK_M):
     # Load TILES_IN_BLOCK_M columns tiles from lhsT
     lhsT_tiles = []
-    for bm in nl.affine_range(TILES_IN_BLOCK_M):
+    for bm in range(TILES_IN_BLOCK_M):
       # Inner tile array.
       lhsT_tiles_internal = []
-      for k in nl.affine_range(K // TILE_K):
+      for k in range(K // TILE_K):
         # Allocate space in SBUF for the tile (uninitialized)
         lhsT_tile = nl.ndarray(shape=(TILE_K, TILE_M),
                                dtype=lhsT.dtype,
@@ -532,13 +532,13 @@ def matrix_multiply_kernel(lhsT, rhs):
       # Append the inner list of tiles into the outer list of tiles.
       lhsT_tiles.append(lhsT_tiles_internal)
 
-    for n in nl.affine_range(N // BLOCK_N):
+    for n in range(N // BLOCK_N):
       # Load TILES_IN_BLOCK_N columns from rhs
       rhs_tiles = []
-      for bn in nl.affine_range(TILES_IN_BLOCK_N):
+      for bn in range(TILES_IN_BLOCK_N):
         # Inner tile array.
         rhs_tiles_internal = []
-        for k in nl.affine_range(K // TILE_K):
+        for k in range(K // TILE_K):
           # Allocate space in SBUF for the tile (uninitialized)
           rhs_tile = nl.ndarray(shape=(TILE_K, TILE_N),
                                 dtype=rhs.dtype,
@@ -554,13 +554,13 @@ def matrix_multiply_kernel(lhsT, rhs):
         # Append the inner list of tiles into the outer list of tiles.
         rhs_tiles.append(rhs_tiles_internal)
 
-      for bm in nl.affine_range(TILES_IN_BLOCK_M):
-        for bn in nl.affine_range(TILES_IN_BLOCK_N):
+      for bm in range(TILES_IN_BLOCK_M):
+        for bn in range(TILES_IN_BLOCK_N):
           # Allocate a tensor in PSUM
           result_tile = nl.ndarray(shape=(TILE_M, TILE_N),
                                    dtype=nl.float32,
                                    buffer=nl.psum)
-          for k in nl.affine_range(K // TILE_K):
+          for k in range(K // TILE_K):
             # Accumulate partial-sums into PSUM
             nisa.nc_matmul(dst=result_tile,
                            stationary=lhsT_tiles[bm][k],
@@ -669,7 +669,7 @@ def matrix_multiply_kernel(
   NUM_BLOCK_K = K // BLOCK_K
 
   # Blocking N dimension (the RHS free dimension)
-  for n in nl.affine_range(NUM_BLOCK_N):
+  for n in range(NUM_BLOCK_N):
     # Create the initial result tiles in SBUF and initialize each tile to
     # 0.0, since the final results will be accumulated here.
     result_tmps = []
@@ -692,9 +692,7 @@ def matrix_multiply_kernel(
       result_tmps.append(block_m)
 
     # Blocking K dimension (the contraction dimension)
-    # Use `sequential_range` because we do not want the compiler to
-    # change this loop by, for example, vectorizing it
-    for k in nl.sequential_range(NUM_BLOCK_K):
+    for k in range(NUM_BLOCK_K):
       # Loading tiles from rhs setting the load tile to
       # `TILE_K x BLOCK_SIZE_N` to optimize DMA performance
       rhs_tiles = []
@@ -712,10 +710,10 @@ def matrix_multiply_kernel(
         rhs_tiles.append(rhs_tile)
 
       # Blocking M dimension (the LHS free dimension)
-      for m in nl.affine_range(NUM_BLOCK_M):
+      for m in range(NUM_BLOCK_M):
         # Loading tiles from lhsT
         lhsT_tiles = []
-        for bk_l in nl.affine_range(TILES_IN_BLOCK_K):
+        for bk_l in range(TILES_IN_BLOCK_K):
           # Allocate lhsT_tile in SBUF (uninitialized)
           lhsT_tile = nl.ndarray(shape=(TILE_K, BLOCK_M),
                                  dtype=lhsT.dtype,
@@ -730,13 +728,13 @@ def matrix_multiply_kernel(
           lhsT_tiles.append(lhsT_tile)
 
         # Do matmul with all tiles in the blocks
-        for bn in nl.affine_range(TILES_IN_BLOCK_N):
-          for bm in nl.affine_range(TILES_IN_BLOCK_M):
+        for bn in range(TILES_IN_BLOCK_N):
+          for bm in range(TILES_IN_BLOCK_M):
             # Allocate result_tile in PSUM (uninitialized)
             result_tile = nl.ndarray(shape=(TILE_M, TILE_N),
                                      dtype=nl.float32,
                                      buffer=nl.psum)
-            for bk in nl.affine_range(TILES_IN_BLOCK_K):
+            for bk in range(TILES_IN_BLOCK_K):
               # Perform matrix multiply on a tile.
               nisa.nc_matmul(
                 dst=result_tile,
@@ -750,13 +748,13 @@ def matrix_multiply_kernel(
                                op=nl.add)
 
     # Copying the result from SBUF to HBM
-    for m in nl.affine_range(NUM_BLOCK_M):
-      for bm in nl.affine_range(TILES_IN_BLOCK_M):
+    for m in range(NUM_BLOCK_M):
+      for bm in range(TILES_IN_BLOCK_M):
         # coalesce result tiles for better DMA performance
         result_packed = nl.ndarray(shape=(TILE_M, BLOCK_N),
                                    dtype=nl.float32,
                                    buffer=nl.sbuf)
-        for bn in nl.affine_range(TILES_IN_BLOCK_N):
+        for bn in range(TILES_IN_BLOCK_N):
           nisa.tensor_copy(
             dst=result_packed[0:TILE_M, bn * TILE_N:(bn + 1) * TILE_N],
             src=result_tmps[m][bm][bn][0:TILE_M, 0:TILE_N])

@@ -19,9 +19,12 @@ Quick reference for finding NKI API function and symbol documentation. Symbols a
 
 | Symbol | Module | Description | Documentation |
 |--------|--------|-------------|---------------|
+| `abs_max` | nki.language | Element-wise absolute maximum (trn3 only) | [nki.api.shared](../programming/api/nki.api.shared.md) |
+| `abs_min` | nki.language | Element-wise absolute minimum (trn3 only) | [nki.api.shared](../programming/api/nki.api.shared.md) |
+| `activate2` | nki.isa | Two-stage tensor-scalar + activation in one instruction (trn3 only) | [nki.isa.activate2](../programming/api/api-nki-isa-scalar.md#nki-isa-activation) |
 | `activation` | nki.isa | Apply activation function with optional scale/bias | [nki.isa.activation](../programming/api/api-nki-isa-scalar.md#nki-isa-activation) |
 | `activation_reduce` | nki.isa | Activation with free-dimension reduction | [nki.isa.activation_reduce](../programming/api/api-nki-isa-scalar.md#nki-isa-activation_reduce) |
-| `affine_range` | nki.language | Parallel loop iterator | [nki.language.affine_range](../programming/api/nki.language.md) |
+| `affine_range` | nki.language | Loop iterator (legacy alias for `range`) | [nki.language.affine_range](../programming/api/nki.language.md) |
 | `affine_select` | nki.isa | Select elements using affine predicate | [nki.isa.affine_select](../programming/api/api-nki-isa-utility.md#nki-isa-affine_select) |
 
 ---
@@ -51,8 +54,9 @@ Quick reference for finding NKI API function and symbol documentation. Symbols a
 |--------|--------|-------------|---------------|
 | `device_print` | nki.language | Print debug output from kernel | [nki.language.device_print](../programming/api/nki.language.md) |
 | `dge_mode` | nki.isa | DMA Descriptor Generation Engine mode enum | [nki.isa.dge_mode](../programming/api/nki.isa.md) |
-| `dma_compute` | nki.isa | Math operations using DMA engines | [nki.isa.dma_compute](../programming/api/api-nki-isa-memory.md#nki-isa-dma_compute) |
+| `dma_compute` | nki.isa | Math operations using DMA engines (replaces dma_copy RMW) | [nki.isa.dma_compute](../programming/api/api-nki-isa-memory.md#nki-isa-dma_compute) |
 | `dma_copy` | nki.isa | Copy data using DMA engines | [nki.isa.dma_copy](../programming/api/api-nki-isa-memory.md#nki-isa-dma_copy) |
+| `dma_engine` | nki.isa | DMA engine enum (dma, gpsimd_dma) | [nki.isa.dma_engine](../programming/api/nki.isa.md) |
 | `dma_transpose` | nki.isa | Transpose using DMA engines | [nki.isa.dma_transpose](../programming/api/api-nki-isa-memory.md#nki-isa-dma_transpose) |
 | `dropout` | nki.isa | Apply dropout to tensor | [nki.isa.dropout](../programming/api/api-nki-isa-scalar.md#nki-isa-dropout) |
 | `ds` | nki.language | Dynamic slice for tensor indexing | [nki.language.ds](../programming/api/nki.language.md) |
@@ -64,6 +68,7 @@ Quick reference for finding NKI API function and symbol documentation. Symbols a
 | Symbol | Module | Description | Documentation |
 |--------|--------|-------------|---------------|
 | `engine` | nki.isa | Neuron Device engine enum | [nki.isa.engine](../programming/api/nki.isa.md) |
+| `exponential` | nki.isa | Dedicated exponential instruction (Trn3/NeuronCore-v4 only) | [nki.isa.exponential](../programming/api/nki.isa.md) |
 
 ---
 
@@ -138,6 +143,7 @@ Quick reference for finding NKI API function and symbol documentation. Symbols a
 | `nc_transpose` | nki.isa | 2D transpose between P and F axes | [nki.isa.nc_transpose](../programming/api/api-nki-isa-tensor.md#nki-isa-nc_transpose) |
 | `nc_version` | nki.isa | NeuronCore version enum | [nki.isa.nc_version](../programming/api/api-nki-isa-tensor.md#nki-isa-nc_version) |
 | `ndarray` | nki.language | Create tensor on specified buffer | [nki.language.ndarray](../programming/api/nki.language.md) |
+| `nonzero_with_count` | nki.isa | Find indices of nonzero elements and count (NeuronCore-v3+) | [nki.isa.nonzero_with_count](../programming/api/api-nki-isa-utility.md#nki-isa-nonzero_with_count) |
 | `num_programs` | nki.language | Number of SPMD programs in grid | [nki.language.num_programs](../programming/api/nki.language.md) |
 
 ---
@@ -173,7 +179,7 @@ Quick reference for finding NKI API function and symbol documentation. Symbols a
 | `reduce_cmd` | nki.isa | Engine register reduce commands enum | [nki.isa.reduce_cmd](../programming/api/nki.isa.md) |
 | `register_alloc` | nki.isa | Allocate virtual register | [nki.isa.register_alloc](../programming/api/nki.isa.md) |
 | `register_load` | nki.isa | Load scalar from memory to register | [nki.isa.register_load](../programming/api/nki.isa.md) |
-| `register_move` | nki.isa | Move constant to register | [nki.isa.register_move](../programming/api/nki.isa.md) |
+| `register_move` | nki.isa | Move value from source register to destination register | [nki.isa.register_move](../programming/api/nki.isa.md) |
 | `register_store` | nki.isa | Store register value to memory | [nki.isa.register_store](../programming/api/nki.isa.md) |
 | `rng` | nki.isa | Generate pseudo random numbers | [nki.isa.rng](../programming/api/nki.isa.md) |
 
@@ -183,15 +189,16 @@ Quick reference for finding NKI API function and symbol documentation. Symbols a
 
 | Symbol | Module | Description | Documentation |
 |--------|--------|-------------|---------------|
+| `simulate` | nki | Run NKI kernel on CPU without NeuronDevice (experimental) | [nki.simulate](../programming/api/api-nki-tools.md#nki-simulate) |
 | `sbuf` | nki.language | State Buffer memory | [nki.language.sbuf](../programming/api/api-nki-language-memory.md#nki-language-sbuf) |
 | `scalar_tensor_tensor` | nki.isa | Two-op sequence with scalar broadcast | [nki.isa.scalar_tensor_tensor](../programming/api/api-nki-isa-tensor.md#nki-isa-scalar_tensor_tensor) |
 | `select_reduce` | nki.isa | Conditional copy with optional reduction | [nki.isa.select_reduce](../programming/api/api-nki-isa-utility.md#nki-isa-select_reduce) |
 | `sendrecv` | nki.isa | Point-to-point NeuronCore communication | [nki.isa.sendrecv](../programming/api/nki.isa.md) |
 | `sequence_bounds` | nki.isa | Compute sequence bounds from segment IDs | [nki.isa.sequence_bounds](../programming/api/api-nki-isa-utility.md#nki-isa-sequence_bounds) |
-| `sequential_range` | nki.language | Sequential loop iterator | [nki.language.sequential_range](../programming/api/nki.language.md) |
+| `sequential_range` | nki.language | Loop iterator (legacy alias for `range`) | [nki.language.sequential_range](../programming/api/nki.language.md) |
 | `set_rng_seed` | nki.isa | Seed Vector Engine PRNG | [nki.isa.set_rng_seed](../programming/api/nki.isa.md) |
 | `shared_hbm` | nki.language | Shared HBM across kernel instances | [nki.language.shared_hbm](../programming/api/api-nki-language-memory.md#nki-language-shared_hbm) |
-| `static_range` | nki.language | Fully unrolled loop iterator | [nki.language.static_range](../programming/api/nki.language.md) |
+| `static_range` | nki.language | Loop iterator (legacy alias for `range`) | [nki.language.static_range](../programming/api/nki.language.md) |
 
 ---
 
@@ -200,8 +207,6 @@ Quick reference for finding NKI API function and symbol documentation. Symbols a
 | Symbol | Module | Description | Documentation |
 |--------|--------|-------------|---------------|
 | `tensor_copy` | nki.isa | Copy tensor within on-chip SRAM | [nki.isa.tensor_copy](../programming/api/api-nki-isa-tensor.md#nki-isa-tensor_copy) |
-| `tensor_copy_dynamic_dst` | nki.isa | Copy with dynamic destination offset | [nki.isa.tensor_copy_dynamic_dst](../programming/api/api-nki-isa-tensor.md#nki-isa-tensor_copy_dynamic_dst) |
-| `tensor_copy_dynamic_src` | nki.isa | Copy with dynamic source offset | [nki.isa.tensor_copy_dynamic_src](../programming/api/api-nki-isa-tensor.md#nki-isa-tensor_copy_dynamic_src) |
 | `tensor_copy_predicated` | nki.isa | Conditional element copy | [nki.isa.tensor_copy_predicated](../programming/api/api-nki-isa-tensor.md#nki-isa-tensor_copy_predicated) |
 | `tensor_partition_reduce` | nki.isa | Reduce across partitions | [nki.isa.tensor_partition_reduce](../programming/api/api-nki-isa-tensor.md#nki-isa-tensor_partition_reduce) |
 | `tensor_reduce` | nki.isa | Reduce along free axes | [nki.isa.tensor_reduce](../programming/api/api-nki-isa-tensor.md#nki-isa-tensor_reduce) |
@@ -253,9 +258,10 @@ Quick reference for finding NKI API function and symbol documentation. Symbols a
 ### Loop Iterators
 | Symbol | Documentation |
 |--------|---------------|
-| `nki.language.static_range` | [Link](../programming/api/nki.language.md) |
-| `nki.language.affine_range` | [Link](../programming/api/nki.language.md) |
-| `nki.language.sequential_range` | [Link](../programming/api/nki.language.md) |
+| `range` (recommended) | Standard Python range |
+| `nki.language.static_range` | [Link](../programming/api/nki.language.md) (legacy alias for `range`) |
+| `nki.language.affine_range` | [Link](../programming/api/nki.language.md) (legacy alias for `range`) |
+| `nki.language.sequential_range` | [Link](../programming/api/nki.language.md) (legacy alias for `range`) |
 
 ### Data Types
 | Symbol | Documentation |
@@ -310,8 +316,6 @@ Quick reference for finding NKI API function and symbol documentation. Symbols a
 | Symbol | Documentation |
 |--------|---------------|
 | `nki.isa.tensor_copy` | [Link](../programming/api/api-nki-isa-tensor.md#nki-isa-tensor_copy) |
-| `nki.isa.tensor_copy_dynamic_src` | [Link](../programming/api/api-nki-isa-tensor.md#nki-isa-tensor_copy_dynamic_src) |
-| `nki.isa.tensor_copy_dynamic_dst` | [Link](../programming/api/api-nki-isa-tensor.md#nki-isa-tensor_copy_dynamic_dst) |
 | `nki.isa.tensor_copy_predicated` | [Link](../programming/api/api-nki-isa-tensor.md#nki-isa-tensor_copy_predicated) |
 
 ### Utility Functions
@@ -371,6 +375,8 @@ Quick reference for finding NKI API function and symbol documentation. Symbols a
 | `nki.isa.engine` | [Link](../programming/api/nki.isa.md) |
 | `nki.isa.reduce_cmd` | [Link](../programming/api/nki.isa.md) |
 | `nki.isa.dge_mode` | [Link](../programming/api/nki.isa.md) |
+| `nki.isa.dma_engine` | [Link](../programming/api/nki.isa.md) |
+| `nki.isa.oob_mode` | [Link](../programming/api/nki.isa.md) |
 | `nki.isa.nc_version` | [Link](../programming/api/api-nki-isa-tensor.md#nki-isa-nc_version) |
 | `nki.isa.get_nc_version` | [Link](../programming/api/api-nki-isa-tensor.md#nki-isa-get_nc_version) |
 | `nki.language.tile_size` | [Link](../programming/api/nki.language.md) |

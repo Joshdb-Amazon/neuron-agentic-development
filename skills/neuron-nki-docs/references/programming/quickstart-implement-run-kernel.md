@@ -246,7 +246,7 @@ NEURON_PLATFORM_TARGET_OVERRIDE=trn2 python test_program.py
 ```
 
 
-Note that the `NEURON_PLATFORM_OVERRIDE` environment variable sets the target architecture. This can also be set in by using `&#64;nki.jit` with the `platform_target` argument. In this example it is set to `trn2` which creates a binary suitable for running on Trn2 machines. For Trn1 / Inf2, specify `trn1`; and for Trn3 specify `trn3`.
+Note that the `NEURON_PLATFORM_TARGET_OVERRIDE` environment variable sets the target architecture. In this example it is set to `trn2` which creates a binary suitable for running on Trn2 machines. For Trn1 / Inf2, specify `trn1`; and for Trn3 specify `trn3`. Note: the `platform_target` parameter on `@nki.jit` was removed in NKI 0.3.0; use this environment variable instead.
 
 Whether you used PyTorch or JAX for the driver, you should see the following result.
 

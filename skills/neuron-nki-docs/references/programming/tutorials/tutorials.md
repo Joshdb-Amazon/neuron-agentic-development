@@ -23,10 +23,3 @@ Create custom 2D average pooling kernels for computer vision workloads
 [Fused Mamba](fused_mamba.md)
 Implement fused Mamba state space model kernels
 
-## Distributed Computing
-
-[SPMD Tensor Addition](spmd_tensor_addition.md)
-Single Program Multiple Data tensor addition across multiple cores
-
-[Multi-Core SPMD Addition](spmd_multiple_nc_tensor_addition.md)
-Advanced SPMD tensor operations across multiple NeuronCores

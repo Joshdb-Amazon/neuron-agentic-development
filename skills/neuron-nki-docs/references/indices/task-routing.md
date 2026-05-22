@@ -92,8 +92,8 @@ This index maps common user goals and tasks to the relevant NKI documentation. U
 
 | Task | Recommended Documentation |
 |------|--------------------------|
-| **Write SPMD kernels** | [SPMD Tensor Addition Tutorial](../programming/tutorials/spmd_tensor_addition.md) |
-| **Use multiple NeuronCores** | [Multi-Core SPMD Tutorial](../programming/tutorials/spmd_multiple_nc_tensor_addition.md), [Logical NeuronCore](../programming/lnc.md) |
+| **Write SPMD kernels** | [Logical NeuronCore](../programming/lnc.md), `nl.program_id`, `nl.num_programs` |
+| **Use multiple NeuronCores** | [Logical NeuronCore](../programming/lnc.md) |
 | **Synchronize across cores** | [nki.isa.core_barrier](../programming/api/api-nki-isa-tensor.md#nki-isa-core_barrier) |
 | **Send/receive data between cores** | [nki.isa.sendrecv](../programming/api/api-nki-isa-tensor.md#nki-isa-sendrecv) |
 | **Get program/core ID** | [nki.language.program_id](../programming/api/nki.language.md), [nki.language.num_programs](../programming/api/nki.language.md) |
@@ -167,10 +167,12 @@ This index maps common user goals and tasks to the relevant NKI documentation. U
 
 | Task | Recommended Documentation |
 |------|--------------------------|
-| **Migrate to newer NKI version** | [NKI Migration Guide](../reference/migration/nki-migration-guide.md) |
+| **Update from NKI 0.2.0 to 0.3.0 (GA)** | [NKI 0.3.0 Update Guide](../reference/migration/nki-030-update-guide.md) |
+| **Migrate from Beta 1 to Beta 2** | [NKI Migration Guide](../reference/migration/nki-migration-guide.md) |
 | **Update block dimension usage** | [Block Dimension Migration Guide](../reference/migration/nki_block_dimension_migration_guide.md) |
-| **Check beta version changes** | [NKI Beta Versions](../optimization/nki-beta-versions.md) |
+| **Check version information** | [NKI Versions](../optimization/nki-beta-versions.md) |
 | **Review release notes** | [NKI Release Notes](../reference/nki_rn.md) |
+| **Run kernel without hardware (CPU simulator)** | [NKI 0.3.0 Update Guide - CPU Simulator](../reference/migration/nki-030-update-guide.md#nki-cpu-simulator) |
 
 ---
 

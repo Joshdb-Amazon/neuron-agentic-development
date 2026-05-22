@@ -153,8 +153,8 @@ In other words, instead of:
 
 ```python
 buf = nl.ndarray((2, 4, nl.par_dim(128), 512), buffer=nl.sbuf)
-for i0 in nl.affine_range(2):
-  for i1 in nl.affine_range(4):
+for i0 in range(2):
+  for i1 in range(4):
      nisa.dma_copy(dst=buf[i0, i1, ....], src=...)
      ...
 ```
@@ -164,8 +164,8 @@ we need to implement:
 
 
 ```python
-for i0 in nl.affine_range(2):
-  for i1 in nl.affine_range(4):
+for i0 in range(2):
+  for i1 in range(4):
      buf = nl.ndarray((nl.par_dim(128), 512), buffer=nl.sbuf)
      nisa.dma_copy(dst=buf, src=...)
 ```
@@ -799,7 +799,7 @@ sbuf_opt1 = nl.load_transpose2d(in_tensor[0:8192, 0:128])
 
 # Option 2, better DMA bandwidth usage, fastest transpose:
 sbuf_opt2 = nl.ndarray((128, 8192), dtype=in_tensor.dtype)
-for i_in_tile in nl.affine_range(8192 // 128):
+for i_in_tile in range(8192 // 128):
     i_start = i_in_tile*128
     current_tile = nl.ndarray((128, 128), dtype=in_tensor.dtype, buffer=nl.sbuf)
     nisa.dma_copy(dst=current_tile, src=in_tensor[i_start:i_start+128, 0:128])

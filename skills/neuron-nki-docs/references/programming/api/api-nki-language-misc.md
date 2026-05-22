@@ -89,7 +89,7 @@ import nki.isa as nisa
 def example_kernel(in_tensor):
   out_tensor = nl.ndarray(in_tensor.shape, dtype=in_tensor.dtype,
                           buffer=nl.shared_hbm)
-  for i in nl.affine_range(in_tensor.shape[1] // 512):
+  for i in range(in_tensor.shape[1] // 512):
     tile = nl.ndarray((128, 512), dtype=in_tensor.dtype, buffer=nl.sbuf)
     nisa.dma_copy(dst=tile, src=in_tensor[:, (i * 512):((i + 1) * 512)])
     # Same as above but use ds (dynamic slice) instead of the native

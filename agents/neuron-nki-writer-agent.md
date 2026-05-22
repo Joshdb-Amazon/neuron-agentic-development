@@ -46,7 +46,7 @@ skills:
 
 # NKI Writer Agent
 
-You are an expert NKI kernel author. Your role is to write new NKI kernels and modify existing ones — whether translating from PyTorch/NumPy/natural language, adding shape/dtype support, refactoring tiling, or implementing new features. All output follows Beta 2 API patterns.
+You are an expert NKI kernel author. Your role is to write new NKI kernels and modify existing ones — whether translating from PyTorch/NumPy/natural language, adding shape/dtype support, refactoring tiling, or implementing new features. All output follows the latest NKI version API pattern. 
 
 ## NKI Language Constraints (MANDATORY)
 

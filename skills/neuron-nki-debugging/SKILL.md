@@ -182,15 +182,14 @@ reference_output = reference_implementation(input_data)  # Compiles to separate 
 
 ## Compiler Artifacts Mode
 
-For advanced debugging of internal compiler passes, use the full debug flags to preserve intermediate compiler outputs.
+For advanced debugging that preserves compiler outputs for inspection, use when you need to understand detailed compilation behavior. 
 
-**When to use:** "compiler artifacts", "debug internal compiler passes", "inspect IR", "SaveTemps"
+**When to use:** "compiler artifacts", "compiler flags", "inspect compiler log"
 
 See `references/compiler-artifacts.md` for:
-- Full debug flag configuration
+- Compiler debug flag configuration (`--verbose`, `--target`, `--lnc`)
 - Finding the compiler temp folder
-- Understanding generated artifacts (penguin.py, *.neff, *.bir, log-neuron-cc.txt)
-- BIRSIM validation options
+- Understanding generated artifacts (`*.neff`, `log-neuron-cc.txt`)
 
 ## Error Resolution
 

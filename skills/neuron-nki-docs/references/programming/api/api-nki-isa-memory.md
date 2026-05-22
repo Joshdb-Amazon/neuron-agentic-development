@@ -15,7 +15,7 @@ DMA and memory management instructions.
 
 nki.isa.dma_compute
 
-nki.isa.dma_compute(*dst*, *srcs*, *scales*, *reduce_op*, *name=None*)[[source]](../../../_modules/nki/isa.html#dma_compute)
+nki.isa.dma_compute(*dst*, *srcs*, *reduce_op*, *scales=None*, *unique_indices=True*, *name=None*)[[source]](../../../_modules/nki/isa.html#dma_compute)
 Perform math operations using compute logic inside DMA engines with element-wise scaling and reduction.
 
 This instruction leverages the compute capabilities within DMA engines to perform scaled element-wise operations
@@ -58,9 +58,11 @@ Parameters:
 
 * **srcs** – a list of input tensors to be scaled and reduced
 
-* **scales** – a list of scale factors corresponding to each tensor in `srcs` (must be [1.0, 1.0, …])
-
 * **reduce_op** – the reduction operation to apply (currently only `nl.add` is supported)
+
+* **scales** – (optional) a list of scale factors corresponding to each tensor in `srcs` (must be [1.0, 1.0, …]); default is None
+
+* **unique_indices** – (optional) whether the indices are unique; default is True
 
 ---
 
@@ -70,18 +72,19 @@ Parameters:
 
 nki.isa.dma_copy
 
-nki.isa.dma_copy(*dst*, *src*, *dst_rmw_op=None*, *oob_mode=oob_mode.error*, *dge_mode=dge_mode.unknown*, *name=None*)[[source]](../../../_modules/nki/isa.html#dma_copy)
-Copy data from `src` to `dst` using DMA engines with optional read-modify-write operations.
+nki.isa.dma_copy(*dst*, *src*, *oob_mode=oob_mode.error*, *dge_mode=dge_mode.unknown*, *name=None*)[[source]](../../../_modules/nki/isa.html#dma_copy)
+Copy data from `src` to `dst` using DMA engines.
 
 This instruction performs data movement between memory locations (SBUF or HBM) using DMA engines. The basic operation
-copies data from the source tensor to the destination tensor: `dst = src`. Optionally, a read-modify-write
-operation can be performed where the source data is combined with existing destination data using a specified
-operation: `dst = dst_rmw_op(dst, src)`.
+copies data from the source tensor to the destination tensor: `dst = src`.
 
-Currently, only `nl.add` is supported for `dst_rmw_op` when performing read-modify-write operations.
-When `dst_rmw_op=None`, the source data directly overwrites the destination data.
+**Important NKI 0.3.0 changes:**
 
-`nisa.dma_copy` supports different modes of DMA descritpor generation (DGE):
+* `dma_copy` no longer supports reading directly from PSUM. Copy the PSUM tensor to SBUF first using `nisa.tensor_copy`.
+* The `dst_rmw_op` and `unique_indices` parameters have been removed. Use `nisa.dma_compute` for read-modify-write operations.
+* When using `dge_mode=dge_mode.hwdge`, source and destination element types must match. Use `.view()` to reinterpret data as a different type before the copy.
+
+`nisa.dma_copy` supports different modes of DMA descriptor generation (DGE):
 
 * `nisa.dge_mode.none`: Neuron Runtime generates DMA descriptors and stores them into HBM before NEFF execution.
 
@@ -100,12 +103,6 @@ In both of these dynamic modes, out-of-bound address checking is turned on autom
 By default a runtime error is raised (`oob_mode=oob_mode.error` as default setting).
 Developers can disable this error and make the nisa.dma_copy instruction skips the DMA transfer for a given dynamic
 address or index when it is out of bound using `oob_mode=oob_mode.skip`.
-If `dst_rmw_op` is specified for these dynamic modes, only `oob_mode.error` is allowed.
-See Beta2 NKI kernel migration guide for the latest syntax to handle dynamic addresses or indices.
-
-`nisa.dma_copy` also supports non-unique scatter indices when `dge_mode=nisa.dge_mode.none`
-and `dst_rmw_op=nl.add` are set. An example use case for this is performing embedding table entry updates
-after a training backward pass to calcualte embedding table gradients.
 
 **Memory types.**
 
@@ -120,27 +117,17 @@ The DMA engines automatically handle data type conversion when `src` and `dst` h
 The conversion is performed through a two-step process: first casting from `src.dtype` to float32, then
 from float32 to `dst.dtype`.
 
-If `dst_rmw_op` is used, the DMA engines automatically cast input data types to float32
-before performing the read-modify-write computation, and the final float32 result is cast to the output
-data type in a pipelined fashion.
-
-**Layout.**
-
-If `dst_rmw_op` is used, the computation is done element-wise between `src` and dst.
-
 **Tile size.**
 
 The total number of data elements in `src` must match that of `dst`.
 
 Parameters:
 
-* **dst** – the destination tensor to copy data into
+* **dst** – the destination tensor to copy data into (must be in SBUF or HBM; cannot be PSUM)
 
-* **src** – the source tensor to copy data from
+* **src** – the source tensor to copy data from (must be in SBUF or HBM; cannot be PSUM)
 
-* **dst_rmw_op** – optional read-modify-write operation (currently only `nl.add` is supported)
-
-* **dge_mode** – (optional) specify which Descriptor Generation Engine (DGE) mode to use for DMA descriptor generation: `nki.isa.dge_mode.none` (turn off DGE) or `nki.isa.dge_mode.swdge` (software DGE) or `nki.isa.dge_mode.hwdge` (hardware DGE) or `nki.isa.dge_mode.unknown` (by default, let compiler select the best DGE mode). Hardware based DGE is only supported for NeuronCore-v3 or newer. See [Trainium2 arch guide](https://awsdocs-neuron.readthedocs-hosted.com/en/latest/nki/arch/trainium2_arch.html) for more information.
+* **dge_mode** – (optional) specify which Descriptor Generation Engine (DGE) mode to use for DMA descriptor generation: `nki.isa.dge_mode.none` (turn off DGE) or `nki.isa.dge_mode.swdge` (software DGE) or `nki.isa.dge_mode.hwdge` (hardware DGE) or `nki.isa.dge_mode.unknown` (by default, let compiler select the best DGE mode). Hardware based DGE is only supported for NeuronCore-v3 or newer. When using `hwdge`, source and destination element types must match. See [Trainium2 arch guide](https://awsdocs-neuron.readthedocs-hosted.com/en/latest/nki/arch/trainium2_arch.html) for more information.
 
 * **oob_mode** – (optional) Specifies how to handle out-of-bounds (oob) array indices during indirect access operations. Valid modes are:
 
@@ -169,16 +156,20 @@ The permutation of transpose follow the rules described below:
 
 * For 4-d input tile, the permutation will be [3, 1, 2, 0]
 
+`dst.shape` must match the transposed `src.shape` exactly, including rank. The compiler raises an assertion error if ranks differ.
+
 The only valid `dge_mode` s are `unknown` and `hwdge`. If `hwdge`, this instruction will be lowered
 to a Hardware DGE transpose. This has additional restrictions:
 
 * `src.shape[0] == 16`
 
-* `src.shape[-1] % 128 == 0`
+* `src.shape[-1] % 128 == 0` (relaxed to `<= 128` when `src` uses indirect access pattern with `vector_offset`)
 
 * `dtype` is 2 bytes
 
 Parameters:
+
+* **dst** – the destination tile. Must have the same rank as the transposed `src`.
 
 * **src** – the source of transpose, must be a tile in HBM or SBUF.
 

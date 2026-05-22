@@ -1,32 +1,41 @@
-# About NKI Beta Versions
+# About NKI Versions
 
-About NKI Beta Versions
-This page provides details on the beta versions of the Neuron Kernel Interface (NKI) and its ongoing evolution.
+About NKI Versions
+This page provides details on the versions of the Neuron Kernel Interface (NKI) and its ongoing evolution.
 
-## Why is NKI considered in “Beta” development?
+## NKI 0.4.0 (Latest, Neuron SDK 2.30.0)
 
-NKI is still in active development. While we have made leaps and bounds in improving the overall language, compiler, libraries, and tools supporting NKI, we still have some polish that needs to be applied before we can call NKI GA.
+NKI 0.4.0 is the current latest version. It adds new trn3 instructions (`nisa.activate2`, `nl.abs_max`/`nl.abs_min`, `square`/`relu` opcodes), bytes-aware `tile_size` constants (`tile_size.sbuf_fmax_bytes`, `tile_size.sbuf_size_bytes`, `tile_size.sbuf_fmax`, `tile_size.psum_fmax_bytes`), `dma_compute` `oob_mode`, and OCP FP8 (`float8_e4m3fn`) matmul support. Breaking changes: `dma_transpose` enforces rank matching, `neuronxcc.nki` namespace is now a compilation error, and `tensor_copy_dynamic_src/dst` are fully removed.
 
-## NKI Beta 2 Features
+## NKI 0.3.0 (GA, Neuron SDK 2.29.0)
 
-First and foremost, NKI Beta 2 introduces a large number of changes to the NKI language. In Beta 2, we have sought to constrain the language to the minimum set that is known to be required to build high performance kernels for popular models today. Constraining the language thus allows us to thoughtfully and intentionally grow the language in the future in an additive fashion without making breaking changes.
+NKI reached General Availability. Ships with NKI Standard Library (nki-stdlib), CPU Simulator, new `nki.language` convenience APIs, and API improvements for correctness and consistency.
 
-Beta 2 also introduces a whole new compiler front end rewritten from the ground up to accommodate this constrained language. We have implemented an LL(k) parser that provides parsing and semantic errors up front, which drastically improves the development experience. Additionally, we have also introduced a number of new APIs that give developers more control over both allocations and scheduling to make the language even more powerful.
+## NKI 0.3.0 (GA) Features
 
-To learn more about the features in Beta 2, see the overview documentation here: [About NKI](../programming/api/index.md).
+NKI 0.3.0 introduces several major features:
 
-To use the Beta 2 language and compiler, import the new `nki.*` namespace in your code and annotate your top-level kernel function with `&#64;nki.jit`.
+- **NKI Standard Library (nki-stdlib)**: An open-source library providing developer-visible code for all NKI APIs and native language objects (e.g., `NkiTensor`).
+- **NKI CPU Simulator**: `nki.simulate(kernel)` executes NKI kernels entirely on CPU without requiring NeuronDevice hardware, enabling local development, debugging, and functional correctness testing on any machine.
+- **nki.typing Module**: Type-annotating kernel tensor parameters with `nt.tensor[shape]`.
+- **nki.language APIs**: Convenience wrappers around `nki.isa` APIs including `nl.load`, `nl.store`, `nl.copy`, `nl.matmul`, `nl.transpose`, `nl.softmax`, and other high-level operations (experimental).
+- **New nki.isa APIs**: `nki.isa.exponential` (Trn3 only) for dedicated exponential instruction.
+- **New nki.collectives APIs**: `nki.collectives.all_to_all_v` for variable-length all-to-all collective.
+- **Matmul Accumulation**: `nc_matmul` and `nc_matmul_mx` now have an `accumulate` parameter.
+- **Address Placement**: `address` parameter added to `nki.language.ndarray` for explicit memory placement.
 
-## NKI Beta 1 Features
+To learn more about the features in NKI 0.3.0, see the overview documentation here: [About NKI](../programming/api/index.md).
 
-While we are in the process of revising the language, we want to ensure continuity for customers with existing kernels already in the wild. As a result, the Beta 2 compiler also comes with a compatibility mode, allowing all Beta 1 kernels to continue working. We are, however, ending support for the Beta 1 language and compiler. This means that the Beta 2 compiler is the final compiler version where the Beta 1 language will be accepted; subsequent releases will not include support for the Beta 1 language and APIs.
+To use NKI, import the `nki.*` namespace in your code and annotate your top-level kernel function with `&#64;nki.jit`.
 
-To utilize the Beta 1 language and compiler, continue importing the legacy `neuronxcc.nki.*` namespace into your code and annotate your top-level kernel function with `&#64;nki.jit`. We are however, deprecating the Beta 1 language and compiler.
+## NKI 0.2.0 (Beta 2) Features
 
-Also, a single file cannot utilize both versions of the language. While it is possible to have a model that uses both versions (Beta 1 and Beta 2) of the language, this is not an officially supported scenario.
+NKI 0.2.0 introduced a large number of changes to the NKI language, constraining it to the minimum set required to build high performance kernels. It also introduced a new compiler front end with an LL(k) parser that provides parsing and semantic errors up front.
 
-## NKI Beta Support Information
+## NKI Beta 1 (Deprecated and Removed)
 
-NKI Beta 1 is now officially deprecated and will receive minimal support. The majority of support cases will become requests to migrate kernels to the Beta 2 version of the language before proceeding. For details on migrating your NKI kernels from Beta 1 to Beta 2, [NKI Language Guide](../programming/nki-language-guide.md).
+NKI Beta 1 (`neuronxcc.nki.*` namespace) is no longer supported. NKI 0.3.0 does not include support for the Beta 1 language and APIs. If you have Beta 1 kernels, you must first migrate to NKI 0.2.0 (see the Beta 1 to Beta 2 migration guide), then follow the [NKI 0.3.0 Update Guide](../reference/migration/nki-030-update-guide.md) to update to the current version.
 
-For support with the Beta 2 language and compiler, file a [GitHub issue](https://github.com/aws-neuron/aws-neuron-sdk/issues) and provide us the details of your experience or issue. Other contact details can be found here: [Contact us](../programming/api/index.md#contact-us).
+## NKI Support Information
+
+For support with NKI, file a [GitHub issue](https://github.com/aws-neuron/aws-neuron-sdk/issues) and provide us the details of your experience or issue. Other contact details can be found here: [Contact us](../programming/api/index.md#contact-us).
