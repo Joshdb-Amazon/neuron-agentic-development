@@ -2,6 +2,86 @@
 
 Neuron Kernel Interface (NKI) release notes
 
+## Neuron Kernel Interface (NKI) (GA) [2.29]
+
+Date: 2026
+
+NKI 0.3.0 moves NKI to General Availability with a new open-source NKI Standard Library (nki-stdlib), a built-in CPU Simulator, `nki.language` APIs, and several API improvements for correctness and consistency.
+
+* new features:
+
+NKI Standard Library (nki-stdlib) — open-source, developer-visible code for all NKI APIs and native language objects
+
+* NKI CPU Simulator — `nki.simulate(kernel)` executes NKI kernels on CPU without NeuronDevice hardware (experimental)
+
+* `nki.typing` module — type-annotate kernel tensor parameters with `nt.tensor[shape]`
+
+* `nki.language` convenience APIs (experimental) — `nl.load`, `nl.store`, `nl.copy`, `nl.matmul`, `nl.transpose`, `nl.softmax`
+
+* new `nki.isa` APIs:
+
+`nki.isa.exponential` — dedicated exponential instruction (Trn3/NeuronCore-v4 only)
+
+* new `nki.collectives` APIs:
+
+`nki.collectives.all_to_all_v` — variable-length all-to-all collective
+
+* changes to existing APIs:
+
+`nki.isa.nc_matmul` and `nki.isa.nc_matmul_mx` — new `accumulate` parameter for controlling overwrite vs accumulation on PSUM
+
+* `nki.language.ndarray` — new `address` parameter for explicit memory placement
+
+* `nki.isa.dma_copy` — no longer supports reading directly from PSUM; `dst_rmw_op` and `unique_indices` parameters removed (use `nisa.dma_compute` instead); enforces type matching with `dge_mode=hwdge`
+
+* `nki.isa.dma_compute` — `scales` and `reduce_op` parameter positions swapped; `unique_indices` parameter added
+
+* `nki.isa.memset` — `value` must match destination dtype; x4 packed types enforce `value=0`
+
+* `nki.isa.tensor_reduce` — fixed incorrect axis handling for 3D/4D tensors
+
+* `nki.isa.sendrecv` — `use_gpsimd_dma` replaced by `dma_engine` enum
+
+* `nki.isa.affine_select` — `offset` parameter moved to keyword argument
+
+* `nki.isa.register_move` — `imm` parameter renamed to `src`, now accepts `VirtualRegister`
+
+* `nki.jit` — `platform_target` parameter removed (use `NEURON_PLATFORM_TARGET_OVERRIDE` env var); `mode` parameter deprecated and ignored
+
+* Output tensors must use `buffer=nl.shared_hbm`
+
+* Integer enum constants no longer supported (use named enum members)
+
+* String buffer names no longer supported (use buffer objects like `nl.sbuf`, `nl.psum`)
+
+* `nki.isa.tensor_copy_dynamic_src` / `nki.isa.tensor_copy_dynamic_dst` deprecated (use `nisa.tensor_copy()` with `.ap()` and `scalar_offset`)
+
+* default value changes:
+
+`nki.isa.iota` — `offset` now optional with default `0`
+
+* `nki.isa.core_barrier` — `engine` default changed from `unknown` to `gpsimd`
+
+* `nki.language.num_programs` — `axes` default changed from `None` to `0`
+
+* `nki.language.program_id` — `axis` now has default value of `0`
+
+* `nki.language.ndarray` — `buffer` default changed from `None` to `nl.sbuf`
+
+* `nki.language.zeros` — `buffer` default changed from `None` to `nl.sbuf`
+
+* `nki.language.sequential_range` — `stop` and `step` now have default values (`None` and `1`)
+
+* language restrictions:
+
+Keyword-only argument separator (`*`) not supported in kernel function signatures
+
+* `is` / `is not` operators not supported; use `==` / `!=` instead
+
+* `list` not supported as kernel argument type; use tuples instead
+
+* Collectives — `num_channels` removed from `collective_permute_implicit_current_processing_rank_id`
+
 ## Neuron Kernel Interface (NKI) (Beta) [2.27]
 
 Date: 12/25/2025

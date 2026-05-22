@@ -4,10 +4,10 @@ Neuron Kernel Interface (NKI) Documentation
 
 > **Note**
 >
-> NKI Beta Versions
+> NKI Versions
 > 
 > 
-> NKI is currently in beta, with Beta 2 as the current version. Read more about [NKI beta versions](../optimization/nki-beta-versions.md).
+> NKI is now Generally Available (GA) with NKI 0.3.0 as the current version. Read more about [NKI versions](../optimization/nki-beta-versions.md).
 
 The Neuron Kernel Interface (NKI) is a Python-embedded Domain Specific Language (DSL) that gives developers direct access to Neuron’s Instruction Set Architecture (NISA). NKI provides the ease-of-programming offered by tile-level operations and full access to the Neuron Instruct Set Architecture within a familiar pythonic programming environment. It provides the flexibility to implement architecture-specific optimizations rapidly, at a speed difficult to achieve in higher-level DSLs and frameworks. This has enabled developers to achieve optimal performance across a wide spectrum of machine learning models on Trainium, including Transformers, Mixture-of-Experts, State Space Models, and more.
 

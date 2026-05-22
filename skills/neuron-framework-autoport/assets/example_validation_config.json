@@ -1,0 +1,22 @@
+{
+    "_comment": "Example validation config for scripts/validate_model.py. Update all paths before use.",
+
+    "model_name": "my-model",
+    "model_class": "neuron_port/modeling_mymodel.py:NeuronMyModelForCausalLM",
+    "config_class": "neuron_port/modeling_mymodel.py:MyModelInferenceConfig",
+    "model_path": "agent_artifacts/data",
+    "compiled_model_path": "agent_artifacts/data/compiled_model",
+    "results_dir": "agent_artifacts/results",
+    "tp_degree": 2,
+    "num_tokens_to_check": 64,
+
+    "test_parameters": [
+        {
+            "_description": "Use the same batch_size and seq_len you compiled with",
+            "batch_size": 1,
+            "seq_len": 2048,
+            "ttft_threshold": 500.0,
+            "throughput_threshold": 5.0
+        }
+    ]
+}

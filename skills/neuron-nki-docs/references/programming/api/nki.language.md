@@ -19,11 +19,12 @@ nki.language
 
 ## Iterators
 
+In NKI 0.3.0, all range iterators are unified and have identical effect. Use standard Python `range` for all loops. The legacy `nl.affine_range`, `nl.sequential_range`, and `nl.static_range` are retained as aliases but have no distinct behavior.
 
-| [ static_range ](generated/nki.language.static_range.md#nki.language.static_range) | Create a sequence of numbers for use as loop iterators in NKI, resulting in a fully unrolled loop. |
+| [ static_range ](generated/nki.language.static_range.md#nki.language.static_range) | Legacy alias for `range`. |
 | --- | --- |
-| [ affine_range ](generated/nki.language.affine_range.md#nki.language.affine_range) | Create a sequence of numbers for use as parallel loop iterators in NKI. |
-| [ sequential_range ](generated/nki.language.sequential_range.md#nki.language.sequential_range) | Create a sequence of numbers for use as sequential loop iterators in NKI. |
+| [ affine_range ](generated/nki.language.affine_range.md#nki.language.affine_range) | Legacy alias for `range`. |
+| [ sequential_range ](generated/nki.language.sequential_range.md#nki.language.sequential_range) | Legacy alias for `range`. |
 
 
 ## Memory Hierarchy

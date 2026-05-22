@@ -379,17 +379,15 @@ nki.isa.nc_transpose(dst=c, data=z)
 ```
 
 
-We will see in the next section how to write loops that run on the Trainium hardware. First, let’s look at some more common uses of control flow in NKI kernels. In addition to the standard range, NKI for-loops can also use:
+We will see in the next section how to write loops that run on the Trainium hardware. First, let’s look at some more common uses of control flow in NKI kernels. The recommended way to write loops in NKI is using the standard Python `range`:
 
 
 ```python
-for i in sequential_range(...): ...
-for i in static_range(...): ...
-for i in affine_range(...): ...
+for i in range(...): ...
 ```
 
 
-These special range function serve as hints to the compiler. They do not change the meaning the loop: the result comptued by the different loops are all equivalent to each other, and to the basic range loop. However, these hints can improve performance in some cases. See the reference manual for more details on these loop hints.
+NKI also provides `nl.affine_range`, `nl.sequential_range`, and `nl.static_range` as legacy aliases. In NKI 0.3.0, all of these range functions have identical effect — they are all equivalent to `range`. The recommended approach is to simply use `range`.
 
 A for-loop can also iterate over a list or tuple, similar to Python. The two loops below both print the numbers 1-3 in sequence.
 
@@ -451,8 +449,11 @@ There are four register APIs that can be used to create, and load and store valu
 # either from constant integer, or a SBUF tensor
 def register_alloc(x: int | tensor) -> register: ...
 
-# store a constant integer into a register
-def register_move(dst: imm: int): ...
+# move a value from a source register into a destination register
+# In NKI 0.3.0, the old 'imm' parameter was renamed to 'src' and
+# now accepts a VirtualRegister instead of a compile-time constant.
+# To move a constant, first allocate a register: src = register_alloc(42)
+def register_move(dst: register, src: register): ...
 
 # load a value from an SBUF tensor into a register
 def register_load(dst: register, src: tensor): ...

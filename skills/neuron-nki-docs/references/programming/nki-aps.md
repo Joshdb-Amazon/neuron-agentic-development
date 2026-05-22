@@ -1,7 +1,7 @@
 # NKI Access Patterns
 
 NKI Access Patterns
-Starting with Beta 2, NKI supports the use of access patterns (AP) on
+NKI supports the use of access patterns (AP) on
 `nl.ndarray`, which provides users with the ability to specify
 hardware-native access patterns. This low-level capability allows developers
 to specify precisely what they want their instructions to read on the hardware.

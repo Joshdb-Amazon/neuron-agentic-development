@@ -139,7 +139,7 @@ Parameters:
 
 nki.isa.nc_matmul
 
-nki.isa.nc_matmul(*dst*, *stationary*, *moving*, *is_stationary_onezero=False*, *is_moving_onezero=False*, *is_transpose=False*, *tile_position=()*, *tile_size=()*, *perf_mode=matmul_perf_mode.none*, *name=None*)[[source]](../../../_modules/nki/isa.html#nc_matmul)
+nki.isa.nc_matmul(*dst*, *stationary*, *moving*, *is_stationary_onezero=False*, *is_moving_onezero=False*, *is_transpose=False*, *tile_position=()*, *tile_size=()*, *perf_mode=matmul_perf_mode.none*, *accumulate=None*, *name=None*)[[source]](../../../_modules/nki/isa.html#nc_matmul)
 Compute `dst = stationary.T &#64; moving` matrix multiplication using Tensor Engine.
 
 The figure below illustrates how to map a matrix multiplication from a mathematical definition
@@ -325,7 +325,7 @@ if `moving` tile is in float32; the field has no impact for non-float32 `moving`
 
 nki.isa.nc_matmul_mx
 
-nki.isa.nc_matmul_mx(*dst*, *stationary*, *moving*, *stationary_scale*, *moving_scale*, *tile_position=None*, *tile_size=None*, *name=None*)[[source]](../../../_modules/nki/isa.html#nc_matmul_mx)
+nki.isa.nc_matmul_mx(*dst*, *stationary*, *moving*, *stationary_scale*, *moving_scale*, *tile_position=None*, *tile_size=None*, *accumulate=None*, *name=None*)[[source]](../../../_modules/nki/isa.html#nc_matmul_mx)
 Compute matrix multiplication of MXFP8/MXFP4 quantized matrices with integrated dequantization using Tensor Engine.
 
 > **Note**

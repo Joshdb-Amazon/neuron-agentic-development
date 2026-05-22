@@ -111,6 +111,51 @@ Parameters:
 
 ---
 
+### nki.isa.activate2 {#nki-isa-activate2}
+
+# nki.isa.activate2
+
+nki.isa.activate2
+
+nki.isa.activate2(*dst*, *op*, *data*, *imm0*, *imm1*, *op0*, *op1*, *relu_param=0.0*, *reverse0=False*, *reverse1=False*, *reduce_op=None*, *reduce_res=None*, *reduce_cmd=reduce_cmd.idle*, *name=None*)
+
+Perform tensor activation with configurable tensor-scalar operations and optional reduction using Scalar Engine. Available only on NeuronCore-v4 (trn3) and newer.
+
+This instruction provides a three-stage pipeline per partition:
+
+1. Tensor-scalar operations: `(data op0 imm0) op1 imm1`
+2. Activation function application via `op`
+3. Optional internal reduction controlled by `reduce_op` and `reduce_cmd`
+
+The tensor-scalar stage supports six `(op0, op1)` combinations:
+
+- `(nl.multiply, nl.add)` — scale and bias
+- `(nl.multiply, nl.subtract)` — scale and negative bias
+- `(nl.multiply, nl.bypass)` — scale only
+- `(nl.add, nl.bypass)` — bias only
+- `(nl.subtract, nl.bypass)` — subtract only
+- `(nl.bypass, nl.bypass)` — no tensor-scalar operation
+
+When `reverse0=True`, the first operation computes `imm0 <op0> data` instead of `data <op0> imm0`. Similarly, `reverse1=True` computes `imm1 <op1> result`.
+
+Parameters:
+
+* **dst** – the activation output tile. Supported buffers: SBUF, PSUM.
+* **op** – an activation function (e.g., `nl.exp`, `nl.sigmoid`, `nl.prelu`, `nl.bypass`).
+* **data** – the input tile; layout: (partition axis <= 128, free axis). Supported buffers: SBUF, PSUM.
+* **imm0** – scalar or `[N, 1]` vector value for the first tensor-scalar operation.
+* **imm1** – scalar or `[N, 1]` vector value for the second tensor-scalar operation.
+* **op0** – first ALU operation (`nl.multiply`, `nl.add`, `nl.subtract`, or `nl.bypass`).
+* **op1** – second ALU operation (`nl.add`, `nl.subtract`, or `nl.bypass`).
+* **relu_param** – parameter for PReLU activation. Defaults to 0.0.
+* **reverse0** – if True, compute `imm0 <op0> data` instead of `data <op0> imm0`.
+* **reverse1** – if True, compute `imm1 <op1> result` instead of `result <op1> imm1`.
+* **reduce_op** – optional reduction operator (e.g., `nl.add`, `nl.maximum`).
+* **reduce_res** – destination tile for reduction result.
+* **reduce_cmd** – reduction command (`nisa.reduce_cmd.idle`, `.reset_reduce`, `.accumulate_reduce`).
+
+---
+
 ### nki.isa.activation_reduce {#nki-isa-activation_reduce}
 
 # nki.isa.activation_reduce

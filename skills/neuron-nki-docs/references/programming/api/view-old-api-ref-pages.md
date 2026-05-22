@@ -1,7 +1,7 @@
 # Where are the older NKI API reference pages?
 
 Where are the older NKI API reference pages?
-If you landed on this page, you probably followed a link to an older NKI API reference page. The NKI API reference documentation has been updated to match the NKI APIs that shipped with Beta 2 of the Neuron Kernel Interface in December 2025.
+If you landed on this page, you probably followed a link to an older NKI API reference page. The NKI API reference documentation has been updated to match the NKI APIs that shipped with NKI 0.3.0 (GA) in the Neuron SDK 2.29.0 release.
 
 To view older versions of the NKI API docs, follow these steps:
 
@@ -11,11 +11,11 @@ To view older versions of the NKI API docs, follow these steps:
 
 ![../../_images/api-doc-version-selector.jpg](../../_images/api-doc-version-selector.jpg)
 
-* Select the version that corresponds to the older NKI API docs you want to view. The last published version of the NKI API docs before the Beta 2 release is version 2.26.1.
+* Select the version that corresponds to the older NKI API docs you want to view. The last published version of the NKI API docs before the NKI 0.2.0 (Beta 2) release is version 2.26.1.
 
 ## Legacy NKI API reference pages
 
-AWS Neuron SDK version: 2.26.1 (last version before NKI Beta 2)
+AWS Neuron SDK version: 2.26.1 (last version before NKI 0.2.0 / Beta 2)
 
 
 | NKI API namespace | Link |

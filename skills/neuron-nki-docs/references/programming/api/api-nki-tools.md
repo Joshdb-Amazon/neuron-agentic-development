@@ -15,23 +15,25 @@ Profiling, benchmarking, and simulation tools.
 
 nki.jit
 
-nki.jit(*func=None*, *mode='auto'*, ***kwargs*)[[source]](../../../_modules/nki.html#jit)
+nki.jit(*func=None*, ***kwargs*)[[source]](../../../_modules/nki.html#jit)
 This decorator compiles a top-level NKI function to run on NeuronDevices.
 
-This decorator tries to automatically detect the current framework and compile
-the function as a custom operator. To bypass the framework detection logic, you
-can specify the `mode` parameter explicitly.
+The NKI Compiler automatically detects the appropriate machine learning framework based on the kernel arguments:
+- **Torch tensors**: uses TorchXLA integration.
+- **JAX arrays**: uses JAX integration.
+- **NumPy arrays**: runs the kernel in standalone mode without a machine learning framework.
+
+**CPU Simulator:** Set `NKI_SIMULATOR=1` to run kernels on CPU without Neuron hardware, or wrap the kernel call in `nki.simulate`. Works with `torch.Tensor` inputs directly — no manual NumPy conversion required. `NKI_PRECISE_FP=1` is the default, modeling low-precision dtypes accurately.
 
 You might need to explicitly set the target platform using the
 `NEURON_PLATFORM_TARGET_OVERRIDE` environment variable. Supported values are
 “trn1”/”gen2”, “trn2”/”gen3”, and “trn3”/”gen4”.
 
+The `platform_target` and `mode` parameters are removed from `@nki.jit`. The compiler auto-detects the framework from kernel arguments.
+
 Parameters:
 
 * **func** – Function that defines the custom operation.
-
-* **mode** – Compilation mode. Supported values are “jax”, “torchxla”,
-and “auto”. (Default: “auto”.)
 
 Listing 11 Writing an addition kernel using `&#64;nki.jit`
 

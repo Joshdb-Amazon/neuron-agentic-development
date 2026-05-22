@@ -33,6 +33,7 @@ deploy-neuron-agentic-development-to-claude
 | [neuron-nki-writer-agent](agents/neuron-nki-writer-agent.md) | NKI kernel authoring and modification. Translates from PyTorch/NumPy/natural language, adds shape/dtype support, refactors tiling strategies, and implements new features following Beta 3 API patterns. |
 | [neuron-nki-debugger-agent](agents/neuron-nki-debugger-agent.md) | Autonomous NKI kernel compilation error debugging. Analyzes compiler errors, searches documentation and code examples for fixes, applies corrections following simplicity over performance, and validates fixes. |
 | [neuron-nki-profile-analysis-agent](agents/neuron-nki-profile-analysis-agent.md) | Profile and analyze NKI kernels on Neuron hardware. Captures execution traces, computes performance bounds, identifies bottleneck engines, and runs investigations to localize inefficiencies to NKI source lines. |
+| [neuron-framework-autoport-agent](agents/neuron-framework-autoport-agent.md) | Autonomous HuggingFace-to-NeuronX model porting agent. Executes the full NXDI porting workflow: knowledge base analysis, architecture analysis, implementation, compilation, inference testing, and validation. |
 
 ## Skills
 
@@ -43,6 +44,8 @@ deploy-neuron-agentic-development-to-claude
 | [neuron-nki-docs](skills/neuron-nki-docs/SKILL.md) | Research NKI documentation for API lookups, tutorials, error codes, and architecture details. |
 | [neuron-nki-profiling](skills/neuron-nki-profiling/SKILL.md) | Profile NKI kernels to analyze performance on Neuron hardware. |
 | [neuron-nki-profile-querying](skills/neuron-nki-profile-querying/SKILL.md) | Query and analyze NKI kernel profile data from neuron-explorer parquet files via SQL and Python. |
+| [neuron-framework-autoport](skills/neuron-framework-autoport/SKILL.md) | Port a HuggingFace model to NeuronX Distributed Inference for AWS Trainium/Inferentia. Handles the full workflow: knowledge base analysis, architecture analysis, NeuronX implementation, compilation, inference testing, and accuracy validation. |
+| [neuron-framework-equivalence](skills/neuron-framework-equivalence/SKILL.md) | Verifies functional equivalence between two implementations of the same model using a hierarchical 8-stage algorithm. Orchestrates model tree comparison, component-level testing, E2E logit comparison, and distributional checks. |
 
 ## Contributing
 

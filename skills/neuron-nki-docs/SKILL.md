@@ -77,9 +77,8 @@ Route queries to the appropriate documentation based on the query pattern:
 - `nl.zeros` - Create zero-initialized tensor
 
 **Loop Constructs:**
-- `nl.affine_range` - Parallel loop (no dependencies)
-- `nl.sequential_range` - Sequential loop (with dependencies)
-- `nl.static_range` - Fully unrolled loop
+- `range` - Standard loop iterator (recommended)
+- `nl.affine_range` / `nl.sequential_range` / `nl.static_range` - Legacy aliases for `range` (all have identical effect in NKI 0.3.0+)
 
 **SPMD:**
 - `nl.program_id` - Get current program index
@@ -125,19 +124,17 @@ Critical limits to remember when answering questions:
 | gen3 (v3) | Trn2 | FP8 support, Double FP8 mode |
 | gen4 (v4) | Trn3 | MXFP8/MXFP4, Quad-MX mode |
 
-## Deprecated Downloads Warning
+## Source NKI Kernel
 
-The following Python example files in `references/downloads/` use deprecated Beta 1 patterns
-(`nl.load`/`nl.store`). When referencing these files, note they contain outdated code and should
-not be used as templates for new kernels:
+The Python example files in `references/downloads/` use the latest NKI API patterns and can be used as reference implementations:
 
-- `average_pool2d_nki_kernels.py`
-- `mamba_nki_kernels.py`
-- `spmd_tensor_addition_nki_kernels.py`
-- `test_nki_isa_local_gather.py`
-- `transpose2d_nki_kernels.py`
+- `average_pool2d_nki_kernels.py` — 2D average pooling kernel
+- `matrix_multiplication_nki_kernels.py` — Tiled matrix multiplication kernel
+- `transpose2d_nki_kernels.py` — 2D transpose kernel
+- `mamba_nki_kernels.py` — Fused Mamba state-space model kernel
+- `test_nki_isa_local_gather.py` — Local gather ISA test
 
-The corresponding `.md` tutorial files are still valid and included - they explain concepts even when code snippets show old patterns.
+> **Note:** The `fused_mamba` tutorial (`references/programming/tutorials/fused_mamba.md`) still uses Beta 1 syntax (`nl.load`/`nl.store`). The optimization concepts (loop reordering, data reuse, tiling for temporal locality) are valid, but do NOT copy its code patterns — use `nisa.dma_copy` from `/neuron-nki-writing` for any code generation.
 
 ## Common Query Examples
 

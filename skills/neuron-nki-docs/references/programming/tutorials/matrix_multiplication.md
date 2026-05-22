@@ -243,13 +243,13 @@ def nki_matmul_tiled_(lhsT, rhs):
   # Create a space for the result in HBM (not initialized)
   result = nl.ndarray((M, N), dtype=lhsT.dtype, buffer=nl.shared_hbm)
 
-  # Use affine_range to loop over tiles
-  for m in nl.affine_range(M // TILE_M):
-    for n in nl.affine_range(N // TILE_N):
+  # Loop over tiles
+  for m in range(M // TILE_M):
+    for n in range(N // TILE_N):
       # Allocate a tensor in PSUM
       res_psum = nl.ndarray((TILE_M, TILE_N), nl.float32, buffer=nl.psum)
 
-      for k in nl.affine_range(K // TILE_K):
+      for k in range(K // TILE_K):
         # Declare the tiles on SBUF
         lhsT_tile = nl.ndarray((TILE_K, TILE_M), dtype=lhsT.dtype, buffer=nl.sbuf)
         rhs_tile = nl.ndarray((TILE_K, TILE_N), dtype=rhs.dtype, buffer=nl.sbuf)
@@ -284,9 +284,9 @@ A few notes about the above code example:
 ```python
 psum_buf = nl.ndarray(..., buffer=nl.psum)
 
-# condition: an affine range loop
-for i in nl.affine_range(N):
-   # condition 3: add matmul results from TensorEngine
+# loop over tiles of the contraction dimension
+for i in range(N):
+   # add matmul results from TensorEngine
    nisa.nc_matmul(psum_buf, stationary_tile, moving_tile) # or nl.matmul
 ```
 
@@ -295,11 +295,7 @@ The use of [PSUM accumulation architecture feature](../../architecture/trainium_
 achieve good performance out of TensorEngine when
 the contraction dimension of the matmul is greater than 128.
 
-The [nl.affine_range](../api/api-nki-language-dims.md#nki-language-affine_range) is used
-to define loop-level iterators, which is the recommended iterator type when the
-loop does not have loop-carried dependency (Note, associative reductions are
-not considered loop carried dependencies in this context). The first
-`nisa.nc_matmul` call overwrites the contents of the `psum_buf`, with
+The first `nisa.nc_matmul` call overwrites the contents of the `psum_buf`, with
 subsequent calls to the `nisa.nc_matmul` instruction accumulating results
 into the `psum_buf`.
 
@@ -419,12 +415,12 @@ def nki_matmul_hoist_load_(lhsT, rhs):
   # Create a space for the result in HBM (not initialized)
   result = nl.ndarray((M, N), dtype=lhsT.dtype, buffer=nl.shared_hbm)
 
-  # Use affine_range to loop over tiles
-  for m in nl.affine_range(M // TILE_M):
+  # Loop over tiles
+  for m in range(M // TILE_M):
     # Load a whole column tiles from lhsT (with K * TILE_M numbers)
     # This corresponds to the whole row in the original lhs
     lhsT_tiles = []
-    for k in nl.affine_range(K // TILE_K):
+    for k in range(K // TILE_K):
       # Allocate space in SBUF for the tile (uninitialized)
       lhsT_tile = nl.ndarray(shape=(TILE_K, TILE_M), dtype=lhsT.dtype, buffer=nl.sbuf)
       # Copy the tile from HBM to SBUF
@@ -434,10 +430,10 @@ def nki_matmul_hoist_load_(lhsT, rhs):
       # Append the tile to the list of tiles.
       lhsT_tiles.append(lhsT_tile)
 
-    for n in nl.affine_range(N // TILE_N):
+    for n in range(N // TILE_N):
       # Load a whole column tiles from rhs (with K * TILE_N numbers)
       rhs_tiles = []
-      for k in nl.affine_range(K // TILE_K):
+      for k in range(K // TILE_K):
         # Allocate space in SBUF for the tile (uninitialized)
         rhs_tile = nl.ndarray(shape=(TILE_K, TILE_N), dtype=rhs.dtype, buffer=nl.sbuf)
         # Copy the tile from HBM to SBUF
@@ -449,7 +445,7 @@ def nki_matmul_hoist_load_(lhsT, rhs):
 
       # Allocate a tile in PSUM for the result (uninitialized)
       res_psum = nl.ndarray(shape=(TILE_M, TILE_N), dtype=nl.float32, buffer=nl.psum)
-      for k in nl.affine_range(K // TILE_K):
+      for k in range(K // TILE_K):
         # Accumulate partial-sums into PSUM
         nisa.nc_matmul(dst=res_psum, stationary=lhsT_tiles[k], moving=rhs_tiles[k])
 
@@ -557,13 +553,13 @@ def nki_matmul_block_free_dimension_(lhsT, rhs):
   result = nl.ndarray((M, N), dtype=lhsT.dtype, buffer=nl.shared_hbm)
 
   # Loop over blocks over the M dimension
-  for m in nl.affine_range(M // BLOCK_M):
+  for m in range(M // BLOCK_M):
     # Load TILES_IN_BLOCK_M columns tiles by TILES_K rows from lhsT
     lhsT_tiles = []
-    for bm in nl.affine_range(TILES_IN_BLOCK_M):
+    for bm in range(TILES_IN_BLOCK_M):
       # Inner tile array.
       lhsT_tiles_internal = []
-      for k in nl.affine_range(K // TILE_K):
+      for k in range(K // TILE_K):
         # Allocate space in SBUF for the tile (uninitialized)
         lhsT_tile = nl.ndarray(shape=(TILE_K, TILE_M),
                                dtype=lhsT.dtype,
@@ -579,13 +575,13 @@ def nki_matmul_block_free_dimension_(lhsT, rhs):
       # Append the inner list of tiles into the outer list of tiles.
       lhsT_tiles.append(lhsT_tiles_internal)
 
-    for n in nl.affine_range(N // BLOCK_N):
+    for n in range(N // BLOCK_N):
       # Load TILES_IN_BLOCK_N columns from rhs by TILES_K rows from rhs
       rhs_tiles = []
-      for bn in nl.affine_range(TILES_IN_BLOCK_N):
+      for bn in range(TILES_IN_BLOCK_N):
         # Inner tile array.
         rhs_tiles_internal = []
-        for k in nl.affine_range(K // TILE_K):
+        for k in range(K // TILE_K):
           # Allocate space in SBUF for the tile (uninitialized)
           rhs_tile = nl.ndarray(shape=(TILE_K, TILE_N),
                                 dtype=rhs.dtype,
@@ -601,13 +597,13 @@ def nki_matmul_block_free_dimension_(lhsT, rhs):
         # Append the inner list of tiles into the outer list of tiles.
         rhs_tiles.append(rhs_tiles_internal)
 
-      for bm in nl.affine_range(TILES_IN_BLOCK_M):
-        for bn in nl.affine_range(TILES_IN_BLOCK_N):
+      for bm in range(TILES_IN_BLOCK_M):
+        for bn in range(TILES_IN_BLOCK_N):
           # Allocate a tensor in PSUM
           result_tile = nl.ndarray(shape=(TILE_M, TILE_N),
                                    dtype=nl.float32,
                                    buffer=nl.psum)
-          for k in nl.affine_range(K // TILE_K):
+          for k in range(K // TILE_K):
             # Accumulate partial-sums into PSUM
             nisa.nc_matmul(dst=result_tile,
                            stationary=lhsT_tiles[bm][k],
@@ -695,10 +691,7 @@ computation can still be sufficient.
 Block size must balance two constraints: it should be large enough to saturate arithmetic intensity, yet
 small enough for all live blocks remain within SBUF capacity to avoid spilling, causing performance regression.
 
-Since the K blocking loop is hand optimized for our ideal data locality, we do
-not actually want the compiler to rewrite this loop during its vectorization and
-other loop-level optimization passes. To communicate this we use
-`nl.sequential_range()` to construct the K blocking loop.
+The K blocking loop is hand optimized for our ideal data locality.
 
 
 ```python
@@ -759,7 +752,7 @@ def nki_matmul_fully_optimized_(
   NUM_BLOCK_K = K // BLOCK_K
 
   # Blocking N dimension (the RHS free dimension)
-  for n in nl.affine_range(NUM_BLOCK_N):
+  for n in range(NUM_BLOCK_N):
     # Create the initial result tiles in SBUF and initialize each tile to
     # 0.0, since the final results will be accumulated here. Results in 3-d array.
     result_tmps = []
@@ -780,9 +773,7 @@ def nki_matmul_fully_optimized_(
       result_tmps.append(block_m)
 
     # Blocking K dimension (the contraction dimension)
-    # Use `sequential_range` because we do not want the compiler
-    # to change this loop by, for example, vectorizing it
-    for k in nl.sequential_range(NUM_BLOCK_K):
+    for k in range(NUM_BLOCK_K):
       # Loading tiles from rhs
       # setting the load tile to `TILE_K x BLOCK_SIZE_N` to optimize DMA performance
       rhs_tiles = []
@@ -801,10 +792,10 @@ def nki_matmul_fully_optimized_(
 
 
       # Blocking M dimension (the LHS free dimension)
-      for m in nl.affine_range(NUM_BLOCK_M):
+      for m in range(NUM_BLOCK_M):
         # Loading tiles from lhsT
         lhsT_tiles = []
-        for bk_l in nl.affine_range(TILES_IN_BLOCK_K):
+        for bk_l in range(TILES_IN_BLOCK_K):
           # Allocate lhsT_tile in SBUF (uninitialized)
           lhsT_tile = nl.ndarray(shape=(TILE_K, BLOCK_M),
                                  dtype=lhsT.dtype,
@@ -818,13 +809,13 @@ def nki_matmul_fully_optimized_(
           lhsT_tiles.append(lhsT_tile)
 
         # Do matmul with all tiles in the blocks
-        for bn in nl.affine_range(TILES_IN_BLOCK_N):
-          for bm in nl.affine_range(TILES_IN_BLOCK_M):
+        for bn in range(TILES_IN_BLOCK_N):
+          for bm in range(TILES_IN_BLOCK_M):
             # Allocate result_tile in PSUM (uninitialized)
             result_tile = nl.ndarray(shape=(TILE_M, TILE_N),
                                      dtype=nl.float32,
                                      buffer=nl.psum)
-            for bk in nl.affine_range(TILES_IN_BLOCK_K):
+            for bk in range(TILES_IN_BLOCK_K):
               # Perform matrix multiply on a tile.
               nisa.nc_matmul(
                 dst=result_tile,
@@ -838,13 +829,13 @@ def nki_matmul_fully_optimized_(
                                op=nl.add)
 
     # Copying the result from SBUF to HBM
-    for m in nl.affine_range(NUM_BLOCK_M):
-      for bm in nl.affine_range(TILES_IN_BLOCK_M):
+    for m in range(NUM_BLOCK_M):
+      for bm in range(TILES_IN_BLOCK_M):
         # coalesce result tiles for better DMA performance
         result_packed = nl.ndarray(shape=(TILE_M, BLOCK_N),
                                    dtype=nl.float32,
                                    buffer=nl.sbuf)
-        for bn in nl.affine_range(TILES_IN_BLOCK_N):
+        for bn in range(TILES_IN_BLOCK_N):
           nisa.tensor_copy(
             dst=result_packed[0:TILE_M, bn * TILE_N:(bn + 1) * TILE_N],
             src=result_tmps[m][bm][bn][0:TILE_M, 0:TILE_N])

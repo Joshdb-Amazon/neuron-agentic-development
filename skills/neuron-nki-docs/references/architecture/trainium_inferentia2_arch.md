@@ -1315,8 +1315,8 @@ the PSUM. Instead, NeuronCompiler relies on the following NKI code pattern to tr
 # condition 1: a psum buffer with zeros
 psum_buf = nl.zeros(..., buffer=nl.psum)
 
-# condition 2: an affine range loop
-for i in nl.affine_range(N):
+# condition 2: a loop over the contraction dimension
+for i in range(N):
    # condition 3: add matmul results from TensorEngine
    psum_buf += nl.matmul(stationary_tile, moving_tile) # or nisa.nc_matmul
 ```

@@ -1,7 +1,8 @@
 # AveragePool2D
 
 > **NOTE:** This tutorial contains code examples using deprecated Beta 1 patterns (`nl.mgrid`, `nl.load`, `nl.store`).
-> For Beta 2 migration guidance, see the [NKI Migration Guide](../../reference/migration/nki-migration-guide.md).
+> For migration guidance, see the [NKI Migration Guide](../../reference/migration/nki-migration-guide.md) (Beta 1 to Beta 2)
+> and the [NKI 0.3.0 Update Guide](../../reference/migration/nki-030-update-guide.md) (Beta 2 to GA).
 > Key changes needed: Replace `nl.mgrid` with explicit loops or reshaping, and replace `nl.load`/`nl.store` with `nisa.dma_copy`.
 
 AveragePool2D

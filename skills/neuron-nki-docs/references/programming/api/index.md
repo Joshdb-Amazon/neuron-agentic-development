@@ -22,6 +22,7 @@ Complete index of all NKI API functions organized by module.
 
 ### N
 
+- `nki.isa.activate2` - [api-nki-isa-scalar.md](api-nki-isa-scalar.md#nki-isa-activate2)
 - `nki.isa.activation` - [api-nki-isa-scalar.md](api-nki-isa-scalar.md#nki-isa-activation)
 - `nki.isa.activation_reduce` - [api-nki-isa-scalar.md](api-nki-isa-scalar.md#nki-isa-activation_reduce)
 - `nki.isa.affine_select` - [api-nki-isa-utility.md](api-nki-isa-utility.md#nki-isa-affine_select)
@@ -44,6 +45,7 @@ Complete index of all NKI API functions organized by module.
 - `nki.isa.nc_matmul` - [api-nki-isa-tensor.md](api-nki-isa-tensor.md#nki-isa-nc_matmul)
 - `nki.isa.nc_matmul_mx` - [api-nki-isa-tensor.md](api-nki-isa-tensor.md#nki-isa-nc_matmul_mx)
 - `nki.isa.nc_n_gather` - [api-nki-isa-tensor.md](api-nki-isa-tensor.md#nki-isa-nc_n_gather)
+- `nki.isa.nonzero_with_count` - [api-nki-isa-utility.md](api-nki-isa-utility.md#nki-isa-nonzero_with_count)
 - `nki.isa.nc_stream_shuffle` - [api-nki-isa-tensor.md](api-nki-isa-tensor.md#nki-isa-nc_stream_shuffle)
 - `nki.isa.nc_transpose` - [api-nki-isa-tensor.md](api-nki-isa-tensor.md#nki-isa-nc_transpose)
 - `nki.isa.nc_version` - [api-nki-isa-tensor.md](api-nki-isa-tensor.md#nki-isa-nc_version)
@@ -65,8 +67,6 @@ Complete index of all NKI API functions organized by module.
 - `nki.isa.sequence_bounds` - [api-nki-isa-utility.md](api-nki-isa-utility.md#nki-isa-sequence_bounds)
 - `nki.isa.set_rng_seed` - [api-nki-isa-misc.md](api-nki-isa-misc.md#nki-isa-set_rng_seed)
 - `nki.isa.tensor_copy` - [api-nki-isa-tensor.md](api-nki-isa-tensor.md#nki-isa-tensor_copy)
-- `nki.isa.tensor_copy_dynamic_dst` - [api-nki-isa-tensor.md](api-nki-isa-tensor.md#nki-isa-tensor_copy_dynamic_dst)
-- `nki.isa.tensor_copy_dynamic_src` - [api-nki-isa-tensor.md](api-nki-isa-tensor.md#nki-isa-tensor_copy_dynamic_src)
 - `nki.isa.tensor_copy_predicated` - [api-nki-isa-tensor.md](api-nki-isa-tensor.md#nki-isa-tensor_copy_predicated)
 - `nki.isa.tensor_partition_reduce` - [api-nki-isa-tensor.md](api-nki-isa-tensor.md#nki-isa-tensor_partition_reduce)
 - `nki.isa.tensor_reduce` - [api-nki-isa-tensor.md](api-nki-isa-tensor.md#nki-isa-tensor_reduce)

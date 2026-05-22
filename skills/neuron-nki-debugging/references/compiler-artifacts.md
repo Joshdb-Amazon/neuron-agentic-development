@@ -1,17 +1,15 @@
 # Compiler Artifacts Mode
 
-Advanced debugging mode that preserves intermediate compiler outputs for inspection. Use when you need to debug internal compiler passes or inspect the generated IR.
+Debug mode that preserves compiler outputs for inspection. Use when you need to understand compilation behavior or diagnose performance issues.
 
 ## When to Use
 
-- "compiler artifacts" - Need to see what the compiler generated
-- "debug internal compiler passes" - Investigating compiler transformations
-- "inspect IR" - Looking at intermediate representation
-- "SaveTemps" - Preserve temporary files
 - Kernel compiles differently than expected
+- Need to inspect compiler log for errors or warnings
 - Performance issues requiring compiler-level analysis
+- Need the compiled NEFF for profiling
 
-## Full Debug Flags
+## Debug Flags
 
 ```python
 import os
@@ -19,19 +17,15 @@ import os
 os.environ["NEURON_CC_FLAGS"] = (
     "--target trn2 "
     "--lnc 1 "
-    "--verbose=info "
-    "--pipeline compile SaveTemps "
-    "--internal-compiler-debug-mode=all"
+    "--verbose=info"
 )
 ```
 
 | Flag | Purpose |
 |------|---------|
-| `--target trn2` | Target platform |
-| `--lnc 1` | Single NeuronCore |
-| `--verbose=info` | Progress messages |
-| `--pipeline compile SaveTemps` | Preserve intermediate files |
-| `--internal-compiler-debug-mode=all` | Full debug output |
+| `--target <platform>` | Target platform (`trn1`, `trn2`, `inf2`) |
+| `--lnc <degree>` | Logical NeuronCore config (1 or 2, default 2 on trn2) |
+| `--verbose <level>` | Output verbosity: `info`, `warning`, `error`, `critical`, `debug` |
 
 ## Finding the Compiler Temp Folder
 
@@ -47,29 +41,16 @@ To find recent compilation directories:
 ls -lt /tmp/$USER/neuroncc_compile_workdir/ | head -5
 ```
 
-The most recent directory (by modification time) contains your compilation artifacts.
-
 ## Generated Artifacts
 
 | File | Description |
 |------|-------------|
-| `penguin.py` | Traced kernel intermediate representation |
 | `*.neff` | Compiled Neuron Executable File Format (binary) |
-| `*.bir` | Backend IR (low-level representation) |
 | `log-neuron-cc.txt` | Detailed compiler log |
-| `*.hlo` | HLO (High Level Operations) graphs |
-
-### penguin.py
-
-The traced Python representation of your kernel after NKI transformation. Useful for understanding how NKI rewrites your kernel code.
 
 ### *.neff
 
-The compiled binary executed on Neuron hardware. Use `neuron-profile` tools to analyze.
-
-### *.bir
-
-Backend Intermediate Representation. Low-level view of operations mapped to hardware.
+The compiled binary executed on Neuron hardware. Use `neuron-explorer` tools to analyze performance.
 
 ### log-neuron-cc.txt
 
@@ -78,55 +59,6 @@ Complete compiler log including:
 - Warnings and diagnostics
 - Memory allocation decisions
 - Optimization passes applied
-
-## BIRSIM Validation (Optional)
-
-For CPU-based numerical validation during compilation, add BIRSIM flags:
-
-```python
-os.environ["NEURON_CC_FLAGS"] = (
-    "--target trn2 "
-    "--lnc 1 "
-    "--verbose=info "
-    "--pipeline compile SaveTemps "
-    "--internal-compiler-debug-mode=all "
-    "--internal-backend-options='"
-    "--enable-birsim=True "
-    "--enable-birsim-at-begin=False "
-    "--enable-birsim-after-all=False "
-    "--enable-birsim-at-end=True "
-    "--birsim-output-tolerance 0.001,1e-5'"
-)
-```
-
-BIRSIM validates kernel correctness on CPU before hardware execution:
-
-| BIRSIM Flag | Purpose |
-|-------------|---------|
-| `--enable-birsim=True` | Enable CPU simulation |
-| `--enable-birsim-at-end=True` | Validate at compilation end |
-| `--birsim-output-tolerance rtol,atol` | Set tolerance thresholds |
-
-## IR Dump Options
-
-To dump IR after specific compiler passes:
-
-```python
-os.environ["NEURON_CC_FLAGS"] = (
-    "--target trn2 "
-    "--lnc 1 "
-    "--verbose=info "
-    "--pipeline compile SaveTemps "
-    "--internal-backend-options='"
-    "--print-format=condensed "
-    "--print-after=translate_nki_ast_to_bir,lower_klir_kernel'"
-)
-```
-
-| Pass | Description |
-|------|-------------|
-| `translate_nki_ast_to_bir` | NKI AST to BIR translation |
-| `lower_klir_kernel` | KLIR kernel lowering |
 
 ## Complete Debug Script
 
@@ -138,13 +70,11 @@ import nki
 import nki.language as nl
 import nki.isa as nisa
 
-# Full debug configuration
+# Debug configuration
 os.environ["NEURON_CC_FLAGS"] = (
     "--target trn2 "
     "--lnc 1 "
-    "--verbose=info "
-    "--pipeline compile SaveTemps "
-    "--internal-compiler-debug-mode=all"
+    "--verbose=info"
 )
 
 # Optional: Capture runtime profiles
@@ -168,7 +98,7 @@ device = xm.xla_device()
 x = torch.randn((64, 128), dtype=torch.float32).to(device=device)
 
 y = my_kernel(x)
-print(y)  # Triggers compilation with full debug output
+print(y)  # Triggers compilation
 
 # After execution, find artifacts:
 # ls -lt /tmp/$USER/neuroncc_compile_workdir/ | head -5
@@ -176,17 +106,12 @@ print(y)  # Triggers compilation with full debug output
 
 ## Artifact Analysis Workflow
 
-1. Run kernel with full debug flags
-2. Find the temp directory from output or `ls -lt` command
-3. Examine `log-neuron-cc.txt` for errors and warnings
-4. Check `penguin.py` to understand kernel transformation done by the compiler frontend
-5. Inspect `*.bir` files for low-level operation mapping done by the compiler backend
-6. Use `neuron-profile` on `*.neff` for performance analysis
+1. Run kernel with debug flags (`--verbose=info`)
+2. Examine `log-neuron-cc.txt` for errors and warnings
+3. Use `neuron-explorer` on `*.neff` for performance analysis
 
 ## Notes
 
-- Debug flags significantly increase compilation time
+- Debug flags increase compilation time
 - Use standard flags (`--target --lnc`) for regular development
-- Only enable full artifacts mode when investigating compiler issues
-- Temp directories are not automatically cleaned; manage disk space
-- BIRSIM validation adds CPU simulation overhead
+- Only enable verbose mode when investigating compiler issues

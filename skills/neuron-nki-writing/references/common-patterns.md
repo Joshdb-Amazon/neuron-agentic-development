@@ -90,8 +90,8 @@ for k_idx in nl.affine_range(num_k_tiles):
     nisa.nc_matmul(dst=psum, stationary=a_tile, moving=b_tile)
     nisa.dma_copy(dst=hbm_temp, src=psum)  # Unnecessary HBM traffic!
 
-# WRONG (NKI 0.3.0): Direct PSUM to HBM dma_copy — no longer supported
-nisa.dma_copy(dst=hbm_output, src=psum)  # Fails in NKI 0.3.0!
+# WRONG: Direct PSUM to HBM dma_copy — no longer supported
+nisa.dma_copy(dst=hbm_output, src=psum)  # FORBIDDEN: direct PSUM→HBM
 # CORRECT: Always copy PSUM → SBUF first, then SBUF → HBM
 sbuf_temp = nl.ndarray(psum.shape, dtype=dtype, buffer=nl.sbuf)
 nisa.tensor_copy(dst=sbuf_temp, src=psum)

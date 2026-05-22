@@ -62,8 +62,8 @@ def nki_tensor_add(a_input, b_input):
     f"Expected partition dimention ({N}) to be divisble by {TILE_N}"
 
   # Lop over each tile, load the tile, do the addition, and save it back to HBM.
-  for m in nl.affine_range(M // TILE_M):
-    for n in nl.affine_range(N // TILE_N):
+  for m in range(M // TILE_M):
+    for n in range(N // TILE_N):
       # Allocte space for the a_tile and b_tile in sbuf (uninitialized)
       a_tile = nl.ndarray(shape=(TILE_M, TILE_N), dtype=a_input.dtype, buffer=nl.sbuf)
       b_tile = nl.ndarray(shape=(TILE_M, TILE_N), dtype=b_input.dtype, buffer=nl.sbuf)

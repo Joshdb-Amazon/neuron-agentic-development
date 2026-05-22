@@ -105,16 +105,14 @@ def nki_matmul_fully_optimized_(
   NUM_BLOCK_K = K // BLOCK_K
 
   # Blocking N dimension (the RHS free dimension)
-  for n in nl.affine_range(NUM_BLOCK_N):
+  for n in range(NUM_BLOCK_N):
     result_tiles = nl.zeros((NUM_BLOCK_M, TILES_IN_BLOCK_M, TILES_IN_BLOCK_N,
                              nl.par_dim(TILE_M), TILE_N),
                             dtype=lhsT.dtype,
                             buffer=nl.sbuf)
 
     # Blocking K dimension (the contraction dimension)
-    # Use `sequential_range` because we do not want the compiler to change this loop by,
-    # for example, vectorizing it
-    for k in nl.sequential_range(NUM_BLOCK_K):
+    for k in range(NUM_BLOCK_K):
       # Loading tiles from rhs
       # setting the load tile to `TILE_K x BLOCK_SIZE_N` to optimize DMA performance
       i_rhs = nl.mgrid[0:TILE_K, 0:BLOCK_N]
@@ -122,19 +120,19 @@ def nki_matmul_fully_optimized_(
                              dtype=rhs.dtype,
                              buffer=nl.sbuf)
 
-      for bk_r in nl.affine_range(TILES_IN_BLOCK_K):
+      for bk_r in range(TILES_IN_BLOCK_K):
         nisa.dma_copy(dst=rhs_tiles[bk_r, i_rhs.p, i_rhs.x],
             src=rhs[(TILES_IN_BLOCK_K * k + bk_r) * TILE_K + i_rhs.p,
                 BLOCK_N * n + i_rhs.x])
 
       # Blocking M dimension (the LHS free dimension)
-      for m in nl.affine_range(NUM_BLOCK_M):
+      for m in range(NUM_BLOCK_M):
         # Loading tiles from lhsT
         i_lhsT = nl.mgrid[0:TILE_K, 0:BLOCK_M]
         lhsT_tiles = nl.ndarray((TILES_IN_BLOCK_K, nl.par_dim(TILE_K), BLOCK_M),
                                 dtype=lhsT.dtype,
                                 buffer=nl.sbuf)
-        for bk_l in nl.affine_range(TILES_IN_BLOCK_K):
+        for bk_l in range(TILES_IN_BLOCK_K):
           nisa.dma_copy(dst=lhsT_tiles[bk_l, i_lhsT.p, i_lhsT.x],
               src=lhsT[(TILES_IN_BLOCK_K * k + bk_l) * TILE_K + i_lhsT.p,
                    BLOCK_M * m + i_lhsT.x])
@@ -143,11 +141,11 @@ def nki_matmul_fully_optimized_(
         i_lhsT_mm = nl.mgrid[0:TILE_K, 0:TILE_M]
         i_rhs_mm = nl.mgrid[0:TILE_K, 0:TILE_N]
         i_res_mm = nl.mgrid[0:TILE_M, 0:TILE_N]
-        for bn in nl.affine_range(TILES_IN_BLOCK_N):
-          for bm in nl.affine_range(TILES_IN_BLOCK_M):
+        for bn in range(TILES_IN_BLOCK_N):
+          for bm in range(TILES_IN_BLOCK_M):
             res_tile = nl.zeros((TILE_M, TILE_N), dtype=nl.float32, buffer=nl.psum)
 
-            for bk in nl.affine_range(TILES_IN_BLOCK_K):
+            for bk in range(TILES_IN_BLOCK_K):
               res_tile[...] += nisa.nc_matmul(
                   lhsT_tiles[bk, i_lhsT_mm.p, bm * TILE_M + i_lhsT_mm.x],
                   rhs_tiles[bk, i_rhs_mm.p, bn * TILE_N + i_rhs_mm.x])
@@ -157,8 +155,8 @@ def nki_matmul_fully_optimized_(
                          i_res_mm.x] += res_tile[i_res_mm.p, i_res_mm.x]
 
     # Copying the result from SBUF to HBM
-    for m in nl.affine_range(NUM_BLOCK_M):
-      for bm in nl.affine_range(TILES_IN_BLOCK_M):
+    for m in range(NUM_BLOCK_M):
+      for bm in range(TILES_IN_BLOCK_M):
         i_res = nl.mgrid[0:TILE_M, 0:TILE_N]
         i_res_packed = nl.mgrid[0:TILE_M, 0:BLOCK_N]
         result_packed = nl.ndarray((TILE_M, BLOCK_N),
@@ -166,7 +164,7 @@ def nki_matmul_fully_optimized_(
                                    buffer=nl.sbuf)
 
         # coalesce result tiles for better DMA performance
-        for bn in nl.affine_range(TILES_IN_BLOCK_N):
+        for bn in range(TILES_IN_BLOCK_N):
           result_packed[i_res.p,
                         bn * TILE_N + i_res.x] = nl.copy(result_tiles[m, bm, bn,
                                                                       i_res.p,
@@ -1032,12 +1030,12 @@ You can optionally include your NKI source code files for display in Neuron Prof
 > The Code Editor displays a section of mlp_with_mm_kernel.py with NKI kernel code visible. The code shows nested loop structures and tensor operations:
 >
 > ```python
-> for m in nl.affine_range(NUM_BLOCK_M):
->     for k in nl.sequential_range(NUM_BLOCK_K):
->         for bk_i in nl.affine_range(TILES_IN_BLOCK_K):
+> for m in range(NUM_BLOCK_M):
+>     for k in range(NUM_BLOCK_K):
+>         for bk_i in range(TILES_IN_BLOCK_K):
 >             lhs_tile = nl.load(lhs_tensor[bk_i+TILE_K, K:K+BLOCK,
 >                               size=mm_copy]
->             for n in nl.affine_range(NUM_BLOCK_N):
+>             for n in range(NUM_BLOCK_N):
 >                 rhs_tile = nisa.nc_transpose(
 >                     result_tile = ...
 >                     stationary=lhs_tile,
@@ -1050,14 +1048,13 @@ You can optionally include your NKI source code files for display in Neuron Prof
 >                        ...)
 >
 > # Copying the result from SBUF to HBM
-> for m in nl.affine_range(NUM_BLOCK_M):
+> for m in range(NUM_BLOCK_M):
 >     result_packed = shuf.simd...
->     for bn in nl.affine_range(...)
+>     for bn in range(...)
 > ```
 >
 > A yellow/gold highlighted line indicates the currently selected or referenced source location. The code shows NKI-specific constructs including:
-> - `nl.affine_range()` for parallel loop iterations
-> - `nl.sequential_range()` for sequential loops
+> - `range()` for loop iterations
 > - `nisa.dma_copy()` for DMA operations
 > - `nisa.nc_transpose()` for tensor transposition
 > - `nisa.tensor_tensor()` for tensor accumulation
@@ -1075,8 +1072,7 @@ You can optionally include your NKI source code files for display in Neuron Prof
 > - Multiple sync and dynamic operation tracks
 >
 > **Key Elements:**
-> - **nl.affine_range()**: NKI parallel loop construct
-> - **nl.sequential_range()**: NKI sequential loop construct  
+> - **range()**: NKI loop construct
 > - **nisa.dma_copy()**: DMA load operation
 > - **nisa.nc_transpose()**: Tensor transposition instruction
 > - **nisa.tensor_tensor()**: Tensor-tensor accumulation
@@ -1159,11 +1155,11 @@ You can optionally include your NKI source code files for display in Neuron Prof
 > The editor displays NKI kernel code with the following visible structure:
 >
 > ```python
-> for m in nl.affine_range(NUM_BLOCK_M):
->     for k in nl.sequential_range(NUM_BLOCK_K):
->         for bk_i in nl.affine_range(TILES_IN_BLOCK_K):
+> for m in range(NUM_BLOCK_M):
+>     for k in range(NUM_BLOCK_K):
+>         for bk_i in range(TILES_IN_BLOCK_K):
 >             lhs_tile = i|
->             for n in nl.affine_range(NUM_BLOCK_N):
+>             for n in range(NUM_BLOCK_N):
 >                 lhs_tile = nl.load(lhs_tensor[...], shape=[TILE_K, BLOCK_M])
 >                 nisa.dma_copy(
 >                     arr=lhs_tile[...:TILE_K, K:BLOCK_M],
@@ -1206,7 +1202,7 @@ You can optionally include your NKI source code files for display in Neuron Prof
 > - **Engine Breakdown: Tensor 100%**: All instructions execute on tensor engine
 > - **nisa.nc_matmul**: NKI matrix multiplication instruction
 > - **nisa.tensor_tensor**: Tensor accumulation operation
-> - **nl.affine_range/sequential_range**: NKI loop constructs
+> - **range**: NKI loop construct
 > - **Inline decorations**: Yellow highlighted performance metrics
 > - **Loop structure**: M, K, N blocking visible in code
 

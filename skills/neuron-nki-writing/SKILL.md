@@ -18,7 +18,7 @@ This skill guides writing and modifying NKI (Neuron Kernel Interface) kernels �
 
 ## Critical: NKI Language Constraints
 
-BEFORE writing any NKI code, read `references/nki-language-constraint.md` for the complete list of required and forbidden API patterns covering both Beta 1 → Beta 2 and Beta 2 → NKI 0.3.0 migration rules. Violating ANY rule is a compilation failure.
+BEFORE writing any NKI code, read `references/nki-language-constraint.md` for the complete list of required and forbidden API patterns covering Beta 1 → Beta 2, Beta 2 → NKI 0.3.0, and NKI 0.3.0 → NKI 0.4.0 migration rules. Violating ANY rule is a compilation failure.
 
 ## Quick Start
 
@@ -185,7 +185,7 @@ For detailed code examples, anti-patterns, and production patterns (cumsum, rmsn
 References are tiered to minimize overhead on simple tasks. Load only what you need based on the Complexity Assessment above.
 
 ### Always load (core references):
-- `references/nki-language-constraint.md` - **MANDATORY**: Required and forbidden API patterns for NKI 0.3.0, reference kernel template
+- `references/nki-language-constraint.md` - **MANDATORY**: Required and forbidden API patterns for NKI 0.4.0, reference kernel template
 - `references/common-patterns.md` - Full code examples: matmul PSUM accumulation, fused ScalarE, associative scan, production patterns
 - `references/api-translation.md` - PyTorch/NumPy to NKI operation mapping
 - `references/kernel-template.md` - Standard kernel template with self-contained utilities

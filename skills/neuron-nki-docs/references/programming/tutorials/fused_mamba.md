@@ -1,7 +1,8 @@
 # Fused Mamba
 
 > **NOTE:** This tutorial contains code examples using deprecated Beta 1 patterns (`nl.load`, `nl.store`).
-> For Beta 2 migration guidance, see the [NKI Migration Guide](../../reference/migration/nki-migration-guide.md).
+> For migration guidance, see the [NKI Migration Guide](../../reference/migration/nki-migration-guide.md) (Beta 1 to Beta 2)
+> and the [NKI 0.3.0 Update Guide](../../reference/migration/nki-030-update-guide.md) (Beta 2 to GA).
 > Key changes needed: Replace `nl.load`/`nl.store` with `nisa.dma_copy` and add explicit tile allocations.
 
 Fused Mamba
@@ -615,7 +616,7 @@ scan_i = nl.ndarray((channels_tiled, seq_len), ...)
 # equivalent to loop iterator dependent control flow within the loop
 scan_i[0:channels_tiled, 0] = deltaBu[0:channels_tiled, 0]
 
-for i in nl.sequential_range(seq_len - 1):
+for i in range(seq_len - 1):
    scan_i[0:channels_tiled, i+1] =    deltaA_i[0:channels_tiled, i+1] * scan_i[0:channels_tiled, i]
                                     + deltaBu_i[0:channels_tiled, i+1]
 ```
@@ -632,7 +633,7 @@ a new implementation that could provide 2x speedup compared to the above:
 scan_i = nl.ndarray((channels_tiled, seq_len), dtype=deltaA.dtype, buffer=nl.sbuf)
 scan_i[0:channels_tiled, 0] = deltaBu[i_p, 0]
 
-for i in nl.sequential_range(seq_len - 1):
+for i in range(seq_len - 1):
    scan_i[0:channels_tiled, i+1] = nisa.tensor_scalar(
         deltaA[0:channels_tiled, i+1],
         op0=nl.multiply,
@@ -799,7 +800,7 @@ all states in SBUF. The corresponding NKI code is:
 ```python
 scanC_accum = nl.zeros(...)
 
-for i_state in nl.affine_range(state_size):
+for i_state in range(state_size):
     scanC_i = ...
     scanC_accum += scanC_i
 ```
@@ -842,15 +843,15 @@ def mamba_v1(delta, u, A, B, C):
     n_channel_tile = channels // channel_psize
 
     # Most outer loop with batch_size, parallel_for
-    for i_batch in nl.affine_range(batch_size):
+    for i_batch in range(batch_size):
         # partial accumulated scanC result with processed states
         scanC_accum = nl.zeros((n_channel_tile, nl.par_dim(channel_psize), seq_len), dtype=delta.dtype)
 
         # Second outer loop with state_size, partial parallel
-        for i_state in nl.affine_range(state_size):
+        for i_state in range(state_size):
 
             # Inner loop: tiling channels
-            for i_channel_tile in nl.affine_range(n_channel_tile):
+            for i_channel_tile in range(n_channel_tile):
                 channel_start = i_channel_tile * channel_psize
 
                 # Load the relevant tile from delta and A
@@ -886,7 +887,7 @@ def mamba_v1(delta, u, A, B, C):
                 scanC_accum[i_channel_tile, 0:channel_psize, 0:seq_len] += scanC
 
         # Store scanC_accum for a single batch to output
-        for i_channel_tile in nl.affine_range(n_channel_tile):
+        for i_channel_tile in range(n_channel_tile):
             channel_start = i_channel_tile * channel_psize
             nl.store(output[i_batch, channel_start:channel_start+channel_psize, 0:seq_len],
                     scanC_accum[i_channel_tile, 0:channel_psize, 0:seq_len])
@@ -1090,8 +1091,8 @@ the following inner loops:
 
 ```python
 ...
-for i_state in nl.affine_range(state_size):
-    for i_channel_tile in nl.affine_range(n_channel_tile):
+for i_state in range(state_size):
+    for i_channel_tile in range(n_channel_tile):
         # step 1-6
 ...
 ```
@@ -1108,11 +1109,11 @@ the `nl.load` calls for `delta/u` outside of the `i_state` inner loop:
 
 ```python
 ...
-for i_channel_tile in nl.affine_range(n_channel_tile):
+for i_channel_tile in range(n_channel_tile):
     delta_i = nl.load(...)
     u_i = nl.load(...)
 
-    for i_state in nl.affine_range(state_size):
+    for i_state in range(state_size):
         # step 1-6
 ...
 ```
@@ -1127,15 +1128,15 @@ scanC_accum = nl.zeros((n_channel_tile, nl.par_dim(channel_psize), seq_len), ...
 ...
 
 # First i_channel_tile loop
-for i_channel_tile in nl.affine_range(n_channel_tile):
+for i_channel_tile in range(n_channel_tile):
     delta_i = nl.load(...)
     u_i = nl.load(...)
 
-    for i_state in nl.affine_range(state_size):
+    for i_state in range(state_size):
         # step 1-6
 
 # Second i_channel_tile loop
-for i_channel_tile in nl.affine_range(n_channel_tile):
+for i_channel_tile in range(n_channel_tile):
     nl.store(..., scanC_accum[i_channel_tile, 0:channel_psize, 0:seq_len])
 
 ...
@@ -1151,13 +1152,13 @@ inside the `i_channel_tile` loop and further reduce the `scanC_accum` size requi
 ...
 
 # First i_channel_tile loop
-for i_channel_tile in nl.affine_range(n_channel_tile):
+for i_channel_tile in range(n_channel_tile):
     scanC_accum = nl.zeros((nl.par_dim(channel_psize), seq_len), ...)
 
     delta_i = nl.load(...)
     u_i = nl.load(...)
 
-    for i_state in nl.affine_range(state_size):
+    for i_state in range(state_size):
         # step 1-6
 
     nl.store(..., scanC_accum[i_channel_tile, 0:channel_psize, 0:seq_len])
@@ -1194,10 +1195,10 @@ def mamba_v2(delta, u, A, B, C):
     n_channel_tile = channels // channel_psize
 
     # Most outer loop with batch_size, parallel_for
-    for i_batch in nl.affine_range(batch_size):
+    for i_batch in range(batch_size):
 
         # Second outer loop: tiling channels
-        for i_channel_tile in nl.affine_range(n_channel_tile):
+        for i_channel_tile in range(n_channel_tile):
             channel_start = i_channel_tile * channel_psize
 
             # partial accumulated scanC result with processed states
@@ -1208,7 +1209,7 @@ def mamba_v2(delta, u, A, B, C):
             u_i = nl.load(u[i_batch, channel_start:channel_start+channel_psize, 0:seq_len])
 
             # Inner loop with state_size, partial parallel
-            for i_state in nl.affine_range(state_size):
+            for i_state in range(state_size):
                 # Load the relevant tile from A
                 A_i = nl.load(A[channel_start:channel_start+channel_psize, i_state])
 
@@ -1333,29 +1334,29 @@ through the `initial` input parameter:
 ```python
 scan_init = nl.zeros((channel_psize, 1), ...)
 
-for i_seq_len_tile in static_range(seq_len // seq_len_fsize):
+for i_seq_len_tile in range(seq_len // seq_len_fsize):
     scan_i = nisa.tensor_tensor_scan(deltaA, deltaBu, initial=scan_init,
                                           op0=np.multiply, op1=np.add)
     scan_init = scan_i[0:channel_psize, seq_len_fsize-1]
 ```
 
 
-Note, we choose to use `static_range` instead of `affine_range` due to the new loop-carried dependencies.
+Note the loop-carried dependency: `scan_init` is updated each iteration and used as the initial value in the next.
 
 **Loop ordering.** Recall from our latest NKI kernel implementation, we have the following loop nest:
 
 
 ```python
 ...
-for i_batch in nl.affine_range(batch_size):
+for i_batch in range(batch_size):
 
-    for i_channel_tile in nl.affine_range(n_channel_tile):
+    for i_channel_tile in range(n_channel_tile):
         scanC_accum = nl.zeros((nl.par_dim(channel_psize), **seq_len**), ...)
 
         delta_i = nl.load(delta[i_batch, channel_start:channel_start+channel_psize, 0:**seq_len**])
         u_i = nl.load(u[i_batch, channel_start:channel_start+channel_psize, 0:**seq_len**])
 
-        for i_state in nl.affine_range(state_size):
+        for i_state in range(state_size):
             A_i = nl.load(A[channel_start:channel_start+channel_psize, i_state])
 
             B_i = nl.load(B[i_batch, i_state:i_state+1, 0:**seq_len**])
