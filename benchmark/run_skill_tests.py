@@ -16,6 +16,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 
@@ -51,6 +52,17 @@ def set_nad_root(nad_root: str) -> None:
 PATTERN_WEIGHT = 0.75
 JUDGE_WEIGHT = 0.25
 DEFAULT_BASELINE_K = 0.90
+
+# Infra-error retry. A scenario that hits an infrastructure error (Docker/agent
+# timeout, container hiccup) is retried up to INFRA_RETRIES extra times before
+# being counted, with a short backoff. This targets ONLY infra flakes (e.g. the
+# heavy autoport port intermittently timing out under CPU contention on 2-core
+# runners) — a genuine skill failure (passed=False, run_status=ok) is returned
+# immediately and never retried, so real regressions are not masked. Timeout is
+# unchanged across retries (300s each). See CLAUDE.md #1: "separate infrastructure
+# failures from Claude failures".
+INFRA_RETRIES = 2
+INFRA_BACKOFF_SECONDS = 5
 
 # Max chars of the submitted file handed to the LLM judge. The old 4000 cap
 # silently truncated large outputs (e.g. a ~25K-char autoport modeling file),
@@ -354,50 +366,74 @@ def evaluate(source: str, scenario: dict, use_judge: bool = False, dockerfile_di
     }
 
 
+def _run_scenario_once(scenario: dict, skills: list, dockerfile_dir: Path, use_judge: bool) -> dict:
+    """One agent-run + scoring attempt for a scenario.
+
+    Returns a result dict. On an infrastructure failure (Docker/agent timeout,
+    etc.) returns run_status='infra_error' rather than raising, so the caller can
+    decide whether to retry. A returned dict WITHOUT run_status is a real scored
+    result (pass or genuine skill failure).
+    """
+    prompt = "\n".join(scenario["input"]) + "\n\nSave your output to output.py"
+    test_dir = setup_workspace(skills, dockerfile_dir)
+    try:
+        # 300s per-scenario agent budget (matches docker.sh's default and the
+        # design doc). The 120s default was too tight for Hard scenarios under
+        # parallel load (agent + judge contend for CPU on 2-core runners),
+        # causing intermittent TimeoutExpired flagged as infra_error.
+        transcript = run_kiro_in_docker(test_dir, prompt, timeout=300)
+        output_file = test_dir / "output.py"
+        source = output_file.read_text() if output_file.exists() else ""
+        # Match patterns against file + agent's response prose only (not tool
+        # output) — see extract_agent_response for why that distinction matters.
+        agent_response = extract_agent_response(transcript)
+        return evaluate(source, scenario, use_judge=use_judge,
+                        dockerfile_dir=dockerfile_dir, agent_response=agent_response)
+    except (subprocess.TimeoutExpired, Exception) as e:
+        # Infrastructure failure (Docker/agent timeout, etc.) — NOT a skill
+        # failure. Record it as its own error rather than mislabeling the
+        # exception text as a forbidden-string violation. See CLAUDE.md:
+        # "Separate infrastructure failures from Claude failures".
+        return {
+            "combined_score": 0,
+            "passed": False,
+            "run_status": "infra_error",
+            "run_error": str(e)[:120],
+            "expected_misses": [],
+            "forbidden_violations": [],
+        }
+    finally:
+        shutil.rmtree(test_dir, ignore_errors=True)
+
+
 def run_single_scenario(args: tuple) -> dict:
-    """Run a single scenario in Docker. Called by ProcessPoolExecutor."""
+    """Run a single scenario in Docker. Called by ProcessPoolExecutor.
+
+    Pass@k loop (outer) retries to obtain a pass; the inner loop retries ONLY on
+    infra_error, up to INFRA_RETRIES extra times, so a transient runner flake
+    doesn't fail the gate. A real result (pass or genuine skill failure) stops the
+    inner retry immediately.
+    """
     scenario, skills, dockerfile_dir, count, use_judge = args
     task_id_str = scenario["taskId"]
     subset_str = scenario.get("_subset")
-    prompt = "\n".join(scenario["input"])
     result = {"combined_score": 0, "passed": False, "expected_misses": [], "forbidden_violations": []}
+    infra_retries_used = 0
 
     for _attempt in range(count):
-        test_dir = setup_workspace(skills, dockerfile_dir)
-        try:
-            # 300s per-scenario agent budget (matches docker.sh's default and the
-            # design doc). The 120s default was too tight for Hard scenarios under
-            # parallel load (agent + judge contend for CPU on 2-core runners),
-            # causing intermittent TimeoutExpired flagged as infra_error.
-            transcript = run_kiro_in_docker(
-                test_dir, prompt + "\n\nSave your output to output.py", timeout=300
-            )
-            output_file = test_dir / "output.py"
-            source = output_file.read_text() if output_file.exists() else ""
-            # Match patterns against file + agent's response prose only (not tool
-            # output) — see extract_agent_response for why that distinction matters.
-            agent_response = extract_agent_response(transcript)
-            result = evaluate(source, scenario, use_judge=use_judge,
-                              dockerfile_dir=dockerfile_dir, agent_response=agent_response)
-            if result["passed"]:
-                break
-        except (subprocess.TimeoutExpired, Exception) as e:
-            # Infrastructure failure (Docker/agent timeout, etc.) — NOT a skill
-            # failure. Record it as its own error rather than mislabeling the
-            # exception text as a forbidden-string violation. See CLAUDE.md:
-            # "Separate infrastructure failures from Claude failures".
-            result = {
-                "combined_score": 0,
-                "passed": False,
-                "run_status": "infra_error",
-                "run_error": str(e)[:120],
-                "expected_misses": [],
-                "forbidden_violations": [],
-            }
-        finally:
-            shutil.rmtree(test_dir, ignore_errors=True)
+        for infra_try in range(INFRA_RETRIES + 1):
+            result = _run_scenario_once(scenario, skills, dockerfile_dir, use_judge)
+            if result.get("run_status") != "infra_error":
+                break  # real result (pass or genuine fail) — do not retry
+            if infra_try < INFRA_RETRIES:
+                infra_retries_used += 1
+                time.sleep(INFRA_BACKOFF_SECONDS)  # transient infra flake — brief backoff, retry
+        if result["passed"]:
+            break
 
     result.setdefault("run_status", "ok")
+    # Surface retry count so a chronically-flaky scenario stays visible (no silent caps).
+    result["infra_retries"] = infra_retries_used
     return {"taskId": task_id_str, "subset": subset_str, **result}
 
 
@@ -461,6 +497,9 @@ def run_all(subset: str = None, task_id: str = None, count: int = 2, workers: in
                     line += f"  missing={r['expected_misses']}"
                 if r.get("forbidden_violations"):
                     line += f"  forbidden={r['forbidden_violations']}"
+            # Note retries even on eventual success, so flaky-but-passing scenarios stay visible.
+            if r.get("infra_retries"):
+                line += f"  (infra_retries={r['infra_retries']})"
             if r.get("judge_reason") and r.get("judge_status") in ("ok", "error"):
                 print(line, flush=True)
                 print(f"      judge: {r['judge_reason'][:100]}", flush=True)
@@ -490,6 +529,14 @@ def run_all(subset: str = None, task_id: str = None, count: int = 2, workers: in
     if infra_errors:
         print(f"INFRA: {len(infra_errors)} scenario(s) hit an infrastructure error "
               f"(not skill failures): {[r['taskId'] for r in infra_errors]}")
+
+    # Retries that eventually succeeded/settled — surfaced so a chronically flaky
+    # scenario is visible even when the gate passes (no silent flake-masking).
+    retried = [r for r in results if r.get("infra_retries")]
+    if retried:
+        detail = ", ".join(f"{r['taskId']}: {r['infra_retries']}" for r in retried)
+        print(f"RETRIED: {len(retried)} scenario(s) needed infra-error retries "
+              f"(max {INFRA_RETRIES} each): [{detail}]")
 
     # Judge health: if the judge was requested, surface how many scenarios it
     # actually scored vs. errored. A wholesale failure (0 scored) means the
