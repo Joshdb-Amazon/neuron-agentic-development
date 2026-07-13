@@ -389,16 +389,35 @@ def _run_scenario_once(scenario: dict, skills: list, dockerfile_dir: Path, use_j
         agent_response = extract_agent_response(transcript)
         return evaluate(source, scenario, use_judge=use_judge,
                         dockerfile_dir=dockerfile_dir, agent_response=agent_response)
-    except (subprocess.TimeoutExpired, Exception) as e:
-        # Infrastructure failure (Docker/agent timeout, etc.) — NOT a skill
-        # failure. Record it as its own error rather than mislabeling the
-        # exception text as a forbidden-string violation. See CLAUDE.md:
-        # "Separate infrastructure failures from Claude failures".
+    except subprocess.TimeoutExpired as e:
+        # The agent/Docker call exceeded the wall-clock budget. Capture the type,
+        # the actual timeout, and whatever the container printed before it was
+        # killed (TimeoutExpired carries partial stdout/stderr) — the old
+        # str(e)[:120] threw all of that away and just showed "Command '[...]'".
+        partial = ""
+        for stream in (e.stdout, e.stderr):
+            if stream:
+                partial += stream.decode() if isinstance(stream, bytes) else stream
         return {
             "combined_score": 0,
             "passed": False,
             "run_status": "infra_error",
-            "run_error": str(e)[:120],
+            "run_error_type": "TimeoutExpired",
+            "run_error": f"timed out after {e.timeout}s",
+            "run_error_detail": _strip_ansi(partial)[-2000:],  # tail of container output
+            "expected_misses": [],
+            "forbidden_violations": [],
+        }
+    except Exception as e:
+        # Any other infrastructure failure (Docker build/run error, kiro-cli
+        # crash, etc.) — NOT a skill failure. Record the exception TYPE + a wide
+        # message so the real cause is visible, not truncated to 120 chars.
+        return {
+            "combined_score": 0,
+            "passed": False,
+            "run_status": "infra_error",
+            "run_error_type": type(e).__name__,
+            "run_error": str(e)[:2000],
             "expected_misses": [],
             "forbidden_violations": [],
         }
@@ -491,7 +510,10 @@ def run_all(subset: str = None, task_id: str = None, count: int = 2, workers: in
                 # Judge was requested but could not run — make it loud, don't hide it.
                 line += "  judge=ERR"
             if r.get("run_status") == "infra_error":
-                line += f"  INFRA_ERROR: {r.get('run_error', '')[:60]}"
+                # Show the exception TYPE + message so the cause is diagnosable
+                # (e.g. TimeoutExpired vs. a Docker/kiro-cli crash), not opaque.
+                etype = r.get("run_error_type", "")
+                line += f"  INFRA_ERROR[{etype}]: {r.get('run_error', '')[:120]}"
             elif not r["passed"]:
                 if r.get("expected_misses"):
                     line += f"  missing={r['expected_misses']}"
@@ -529,6 +551,12 @@ def run_all(subset: str = None, task_id: str = None, count: int = 2, workers: in
     if infra_errors:
         print(f"INFRA: {len(infra_errors)} scenario(s) hit an infrastructure error "
               f"(not skill failures): {[r['taskId'] for r in infra_errors]}")
+        # Dump each infra error's type + captured detail so the actual cause is
+        # visible in the log (e.g. what the container printed before a timeout).
+        for r in infra_errors:
+            print(f"  --- {r['taskId']} [{r.get('run_error_type', '?')}]: {r.get('run_error', '')}")
+            if r.get("run_error_detail"):
+                print(f"      container output (tail):\n{r['run_error_detail']}")
 
     # Retries that eventually succeeded/settled — surfaced so a chronically flaky
     # scenario is visible even when the gate passes (no silent flake-masking).
