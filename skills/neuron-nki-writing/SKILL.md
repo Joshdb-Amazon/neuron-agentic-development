@@ -431,3 +431,5 @@ else:
 | `/neuron-nki-debugging` | Debug compiler errors on device |
 | `/neuron-nki-profiling` | Profile kernel performance |
 | `/neuron-nki-profile-querying` | Query and analyze kernel profile data |
+
+<!-- external-gate trigger test: harmless no-op edit -->
