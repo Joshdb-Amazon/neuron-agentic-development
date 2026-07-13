@@ -1,0 +1,63 @@
+name: NAD Benchmark
+
+# Single-repo NAD skill benchmark gate.
+#
+# Everything the gate needs lives in THIS repo: the inputs it scores
+# (skills/, agents/, tests/, tests/registry.json) at the repo root, and the
+# grader that scores them under benchmark/ (run_skill_tests.py + scaffold/ +
+# Dockerfile, packaged as benchmark/action.yml). So the workflow just checks
+# itself out and runs the LOCAL composite action against the repo root — no
+# cross-repo `uses:`, no pinned harness tag, and no NAD_READ token (all of
+# which existed only when the inputs and grader lived in two separate repos).
+
+on:
+  # PR gate — runs when either the inputs OR the grader change.
+  pull_request:
+    paths:
+      - 'skills/**'
+      - 'agents/**'
+      - 'tests/**'
+      - 'benchmark/**'
+      - '.github/workflows/benchmark.yml'
+
+  workflow_dispatch:
+    inputs:
+      subset:
+        description: "Subset(s): 'all', a single name, or a comma-separated list"
+        default: 'all'
+      count:
+        description: 'Pass@k attempts per scenario'
+        default: '1'
+      gate:
+        description: 'Required pass rate (0-100); job fails below this'
+        default: '90'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nad-benchmark-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  benchmark:
+    name: NAD ${{ github.event.inputs.subset || 'all' }} benchmark
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Run the LOCAL composite action (benchmark/action.yml). The action finds
+      # run_skill_tests.py + scaffold/ + the Dockerfile beside itself; nad-root
+      # '.' points the input paths (skills/, agents/, tests/) at the repo root,
+      # so the gate scores THIS repo's own assets (this PR's changes).
+      - name: Run NAD benchmark
+        uses: ./benchmark
+        with:
+          nad-root: .
+          kiro-api-key: ${{ secrets.KIRO_API_KEY }}
+          subset: ${{ github.event.inputs.subset || 'all' }}
+          count: ${{ github.event.inputs.count || '1' }}
+          gate: ${{ github.event.inputs.gate || '90' }}

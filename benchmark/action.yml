@@ -1,0 +1,125 @@
+name: 'NAD Benchmark'
+description: >-
+  Run the NAD skill benchmark (kiro-cli agent in Docker + pattern/judge scoring)
+  against a NAD inputs checkout. This is the single source of "how to run" — both
+  the NAD-inputs repo and the harness self-test call this one action, each having
+  arranged the NAD assets on the filesystem first (see harness/NAD separation
+  design). The action does the work; the caller arranges what gets scored via
+  `nad-root`.
+
+# Composite action: referencing this with `uses: <owner>/<harness-repo>@ref`
+# fetches the harness code (run_skill_tests.py, scaffold/, Dockerfile) onto the
+# runner automatically — PAT-free for same-owner private repos once "Access →
+# accessible from repositories owned by ..." is enabled. A reusable workflow
+# would import only YAML and still need a checkout+token for the code.
+
+inputs:
+  nad-root:
+    description: >-
+      Path to the NAD inputs root (contains tests/, skills/, agents/). Relative
+      paths resolve against the caller's workspace (GITHUB_WORKSPACE), so the
+      caller checks NAD out and points here. Default '.' scores the caller's
+      own checkout (the NAD-inputs-PR case).
+    required: false
+    default: '.'
+  kiro-api-key:
+    description: >-
+      Kiro API key for the agent and judge. Pass the KIRO_API_KEY secret from the
+      caller. Taken as an explicit input (not inherited env) so it works
+      regardless of GHA env-propagation quirks into composite steps.
+    required: true
+  subset:
+    description: "Subset(s): 'all', a single name, or a comma-separated list."
+    required: false
+    default: 'all'
+  count:
+    description: 'Pass@k attempts per scenario.'
+    required: false
+    default: '1'
+  workers:
+    description: 'Parallel worker processes.'
+    required: false
+    default: '4'
+  judge:
+    description: "Enable the LLM judge (25% weight). 'true' or 'false'."
+    required: false
+    default: 'true'
+  gate:
+    description: 'Required pass rate (0-100); the action fails below this. Empty = informational.'
+    required: false
+    default: '90'
+  python-version:
+    description: 'Python version for the runner host (the agent/judge run in Docker).'
+    required: false
+    default: '3.11'
+  artifact-name:
+    description: 'Name for the uploaded results artifact.'
+    required: false
+    default: 'nad-benchmark-results'
+
+outputs:
+  results-path:
+    description: 'Absolute path to the results JSON written by the runner.'
+    value: ${{ steps.results.outputs.results-path }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Run NAD benchmark
+      id: run
+      shell: bash
+      env:
+        # Option-1 auth: kiro-cli reads KIRO_API_KEY; docker.sh passes it into
+        # the container. Same key drives the agent and the judge.
+        KIRO_API_KEY: ${{ inputs.kiro-api-key }}
+      run: |
+        set -euo pipefail
+
+        # --gate is omitted (informational run) when the caller passes gate=''.
+        GATE_ARG=()
+        if [ -n "${{ inputs.gate }}" ]; then
+          GATE_ARG=(--gate="${{ inputs.gate }}")
+        fi
+
+        # --judge is a store_true flag: include it only when judging is on.
+        JUDGE_ARG=()
+        if [ "${{ inputs.judge }}" = "true" ]; then
+          JUDGE_ARG=(--judge)
+        fi
+
+        # Invoke the script from the ACTION path (so it finds scaffold/ + the
+        # Dockerfile beside it and writes build/ there). --nad-root is resolved
+        # against the caller's workspace, so it scores whatever the caller
+        # checked out.
+        python "${{ github.action_path }}/run_skill_tests.py" \
+          --nad-root="${{ inputs.nad-root }}" \
+          --subset="${{ inputs.subset }}" \
+          --count="${{ inputs.count }}" \
+          --workers="${{ inputs.workers }}" \
+          "${JUDGE_ARG[@]}" \
+          "${GATE_ARG[@]}"
+
+    - name: Expose results path
+      id: results
+      if: always()
+      shell: bash
+      run: |
+        # github.action_path is '.' when this action is used LOCALLY (uses: ./),
+        # and upload-artifact rejects paths containing '.' / '..'. Resolve to an
+        # absolute path so both the local (self-test) and remote (NAD caller)
+        # invocations produce a valid path.
+        abs="$(realpath "${{ github.action_path }}")/build/nad_benchmark_results.json"
+        echo "results-path=${abs}" >> "$GITHUB_OUTPUT"
+
+    - name: Upload results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: ${{ steps.results.outputs.results-path }}
+        if-no-files-found: warn
