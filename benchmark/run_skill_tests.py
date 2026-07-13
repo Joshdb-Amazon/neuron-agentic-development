@@ -365,15 +365,12 @@ def run_single_scenario(args: tuple) -> dict:
     for _attempt in range(count):
         test_dir = setup_workspace(skills, dockerfile_dir)
         try:
-            # 480s per-scenario agent budget. The 120s default was too tight for
-            # Hard scenarios under parallel load (agent + judge contend for CPU on
-            # 2-core runners), causing intermittent TimeoutExpired flagged as
-            # infra_error. 300s cleared the nki scenarios but the largest port
-            # (autoport-starcoder2, ~25K) still timed out at the ceiling; 480s
-            # gives it headroom and stays well under the 20-min job budget
-            # (run_kiro_in_docker adds +30s for the subprocess wrapper).
+            # 300s per-scenario agent budget (matches docker.sh's default and the
+            # design doc). The 120s default was too tight for Hard scenarios under
+            # parallel load (agent + judge contend for CPU on 2-core runners),
+            # causing intermittent TimeoutExpired flagged as infra_error.
             transcript = run_kiro_in_docker(
-                test_dir, prompt + "\n\nSave your output to output.py", timeout=480
+                test_dir, prompt + "\n\nSave your output to output.py", timeout=300
             )
             output_file = test_dir / "output.py"
             source = output_file.read_text() if output_file.exists() else ""
