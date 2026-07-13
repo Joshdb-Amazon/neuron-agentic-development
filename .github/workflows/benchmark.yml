@@ -8,16 +8,23 @@ name: NAD Benchmark
 # workflow is self-contained — it runs the grader directly against the repo
 # root, so a PR that changes the inputs OR the grader is scored against this
 # repo's own assets.
+#
+# NOTE: automatic PR gating is DISABLED. The current policy is that EVERY PR is
+# gated on demand via the label-triggered workflow (benchmark-external.yml): a
+# maintainer adds the `run-benchmark` label. This workflow is kept for manual
+# runs (workflow_dispatch) and can be re-enabled as an automatic gate by
+# uncommenting the `pull_request:` trigger below.
 
 on:
-  # PR gate — runs when either the inputs OR the grader change.
-  pull_request:
-    paths:
-      - 'skills/**'
-      - 'agents/**'
-      - 'tests/**'
-      - 'benchmark/**'
-      - '.github/workflows/benchmark.yml'
+  # Automatic PR gate — DISABLED by policy (label-triggered gate is used instead).
+  # To re-enable automatic gating on trusted PRs, uncomment this block:
+  # pull_request:
+  #   paths:
+  #     - 'skills/**'
+  #     - 'agents/**'
+  #     - 'tests/**'
+  #     - 'benchmark/**'
+  #     - '.github/workflows/benchmark.yml'
 
   workflow_dispatch:
     inputs:

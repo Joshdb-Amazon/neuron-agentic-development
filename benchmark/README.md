@@ -21,16 +21,25 @@ Everything the gate needs lives in this repo:
 
 ## How it runs
 
-`.github/workflows/benchmark.yml` checks the repo out and runs
-`benchmark/run_skill_tests.py --nad-root=.`, so the grader scores the repo's own
-`skills/` + `agents/` + `tests/`. No cross-repo references or tokens are needed.
+The gate scores the repo's own `skills/` + `agents/` + `tests/` by running
+`benchmark/run_skill_tests.py --nad-root=.`. No cross-repo references or tokens.
 
-- **Trigger:** `pull_request` touching `skills/**`, `agents/**`, `tests/**`,
-  `benchmark/**`, or the workflow file; plus manual `workflow_dispatch`
-  (inputs: `subset`, `count`, `gate`).
-- **Requires:** a `KIRO_API_KEY` Actions secret on the repo (authenticates both the
-  agent and the LLM judge). Fork PRs from external contributors do not receive
-  secrets, so gating those requires a maintainer-triggered run.
+**Every PR is gated on demand via a label** (`.github/workflows/benchmark-external.yml`):
+
+- A maintainer reviews a PR and adds the **`run-benchmark`** label; that triggers
+  the gate on the PR. Contributors can't add the label (no write access), so
+  nothing runs until a maintainer opts the PR in. Pushing new commits does not
+  re-run it — the maintainer must re-apply the label (re-review).
+- It uses `pull_request_target` so the run can access the `KIRO_API_KEY` secret
+  even for PRs from external forks (a plain `pull_request` run gets no secrets on
+  forks). The maintainer who labels a PR is vouching for it: the job runs the PR's
+  contributed skill code with the key present, so only label PRs you've reviewed.
+- **Requires** on the repo: a `KIRO_API_KEY` Actions secret (authenticates both the
+  agent and the LLM judge; use a service-account key) and a `run-benchmark` label.
+
+`.github/workflows/benchmark.yml` is the same grader wired for **manual**
+`workflow_dispatch` runs (inputs: `subset`, `count`, `gate`). Its automatic
+`pull_request` trigger is commented out — uncomment it to also auto-gate PRs.
 
 ## Scoring
 
@@ -52,20 +61,24 @@ The gate fails if the overall pass rate is below `--gate` (default 90%).
 
 ## Reliability handling
 
-- **Infra-error retry:** a scenario that hits an infrastructure error (Docker/agent
-  timeout, etc.) is retried up to 2 more times before counting. Genuine skill
-  failures are never retried.
+- **No infra-error retry.** A failure is reported as-is — including a timeout that
+  produced no output, which typically reflects the *agent* going down a bad path
+  (e.g. fetching a dead URL and stalling). This is skill behavior the benchmark
+  should measure, not hide by retrying until it happens to pass. For deliberate
+  multi-attempt runs use `--count` (transparent Pass@k).
 - **Salvage-on-timeout:** if the agent times out but has already written a non-empty
   `output.py`, that output is scored instead of being discarded (the agent often
-  finishes the task and then hangs on a trivial final step). Only a timeout that
-  produced no output counts as an infrastructure error.
+  finishes the task and then hangs on a trivial final step). This scores what the
+  agent actually produced — it does not grant a fresh attempt. A timeout that
+  produced no output is reported as an infrastructure error (`run_status:
+  infra_error`), logged with its exception type + container-output tail.
 
 ## Running it
 
 ```bash
-# In CI: Actions -> NAD Benchmark -> Run workflow (workflow_dispatch), or on a PR.
+# On a PR (primary path): a maintainer adds the `run-benchmark` label to the PR.
 
-# Manually via CLI:
+# Manually via CLI (workflow_dispatch on benchmark.yml):
 gh workflow run benchmark.yml -f subset=all -f count=1 -f gate=90
 
 # Locally (needs Docker + KIRO_API_KEY):

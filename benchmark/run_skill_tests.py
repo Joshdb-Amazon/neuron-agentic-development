@@ -378,10 +378,10 @@ def _run_scenario_once(scenario: dict, skills: list, dockerfile_dir: Path, use_j
     prompt = "\n".join(scenario["input"]) + "\n\nSave your output to output.py"
     test_dir = setup_workspace(skills, dockerfile_dir)
     try:
-        # 300s per-scenario agent budget (matches docker.sh's default and the
-        # design doc). The 120s default was too tight for Hard scenarios under
-        # parallel load (agent + judge contend for CPU on 2-core runners),
-        # causing intermittent TimeoutExpired flagged as infra_error.
+        # 300s per-scenario agent budget (matches docker.sh's default). Heavy
+        # scenarios (e.g. the autoport model port) can still exceed this under
+        # parallel load and time out; a timeout that already produced output.py is
+        # salvaged below, and one that produced nothing is reported as infra_error.
         transcript = run_kiro_in_docker(test_dir, prompt, timeout=300)
         output_file = test_dir / "output.py"
         source = output_file.read_text() if output_file.exists() else ""
@@ -622,9 +622,9 @@ if __name__ == "__main__":
         "checkout to score that repo's native assets.",
     )
     parser.add_argument("--task-id", default=None)
-    parser.add_argument("--count", type=int, default=2)
+    parser.add_argument("--count", type=int, default=1)
     parser.add_argument("--workers", type=int, default=4)
-    parser.add_argument("--judge", action="store_true", help="Enable LLM judge (25%% weight) via claude CLI")
+    parser.add_argument("--judge", action="store_true", help="Enable LLM judge (25%% weight) via kiro-cli")
     parser.add_argument(
         "--gate",
         type=float,

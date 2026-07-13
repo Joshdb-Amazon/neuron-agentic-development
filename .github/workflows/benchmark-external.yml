@@ -1,0 +1,86 @@
+name: NAD Benchmark (label-triggered)
+
+# The active NAD benchmark gate. Policy: EVERY PR (internal or external fork) is
+# gated on demand — a maintainer reviews the PR and adds the `run-benchmark`
+# label to run it. (Automatic gating in benchmark.yml is disabled by policy;
+# this label gate is the one that runs.)
+#
+# It uses pull_request_target so the run has access to KIRO_API_KEY even for fork
+# PRs (a plain pull_request gate can't — fork PRs receive no secrets), and is
+# guarded so it runs ONLY when a maintainer explicitly opts a PR in.
+#
+# How it's controlled:
+#  - Triggers ONLY on the `labeled` event, and the job runs ONLY if the label is
+#    `run-benchmark`. A fork contributor cannot add the label (no write access),
+#    so nothing runs until a MAINTAINER reviews the PR and applies the label.
+#  - A later push does NOT re-run it — a maintainer must re-apply the label, i.e.
+#    re-review, before new commits are scored.
+#  - permissions: contents: read (drops the default write-capable GITHUB_TOKEN).
+#
+# The maintainer who applies the label is vouching for the PR: this job checks out
+# and runs the PR's contributed skill in a job that holds KIRO_API_KEY, so only
+# label PRs whose changes you've looked at. Use a service-account key (not a
+# personal one) so it can be rotated independently.
+
+on:
+  pull_request_target:
+    # ONLY the label event — never `synchronize`/`opened`, so untrusted code
+    # never auto-runs on push. A maintainer must (re-)apply the label each time.
+    types: [labeled]
+
+# Least privilege: the base-context GITHUB_TOKEN is write-capable by default under
+# pull_request_target. Restrict it to read so untrusted code can't use it to push,
+# open releases, or modify the repo.
+permissions:
+  contents: read
+
+concurrency:
+  group: nad-benchmark-external-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    # Run ONLY when a maintainer added the `run-benchmark` label. This `if` is the
+    # trust gate — without it, pull_request_target would run untrusted code with
+    # secrets on every PR event.
+    if: github.event.label.name == 'run-benchmark'
+    name: NAD external benchmark (labeled)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      # Check out the PR's HEAD — i.e. the contributor's UNTRUSTED code. This is
+      # required (we must score their skill) and is the crux of the risk above.
+      # The workflow FILE itself still comes from base (pull_request_target), so
+      # the contributor cannot alter these steps — only the skill/agent/test/
+      # grader content that the steps then run.
+      - name: Checkout PR head (untrusted)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run NAD benchmark
+        env:
+          KIRO_API_KEY: ${{ secrets.KIRO_API_KEY }}
+        run: |
+          set -euo pipefail
+          python benchmark/run_skill_tests.py \
+            --nad-root=. \
+            --subset=all \
+            --count=1 \
+            --workers=4 \
+            --judge \
+            --gate=90
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nad-benchmark-results
+          path: benchmark/build/nad_benchmark_results.json
+          if-no-files-found: warn
