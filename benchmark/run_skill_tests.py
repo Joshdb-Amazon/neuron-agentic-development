@@ -19,15 +19,15 @@ import tempfile
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 
-# NAD benchmark inputs (tests/skills/agents) are supplied via --nad-root (resolved
-# in main via set_nad_root), pointing at a NAD checkout — the inputs now live in
-# the separate NAD-inputs repo, not vendored here (see harness/NAD separation
-# design). The ./nad default below is a legacy fallback and no longer exists in
-# this repo; a bare run without --nad-root errors with a clear "no tests/" message.
+# NAD benchmark inputs (tests/, skills/, agents/) live at the repo root and are
+# resolved via --nad-root (default ".", handled in main via set_nad_root). In this
+# single-repo layout the gate scores the repo's own assets, so --nad-root=. points
+# at the checkout root. --nad-root can also point at any other NAD checkout to
+# score that repo's native assets instead.
 #
 # FRAMEWORK_DIR (shell/, environment/Dockerfile, build/) is SEPARATE and always anchored to
 # this file — only the three input dirs move behind --nad-root.
-PROJECT_DIR = Path(__file__).parent / "nad"
+PROJECT_DIR = Path(__file__).parent.parent
 TESTS_DIR = PROJECT_DIR / "tests"
 SKILLS_DIR = PROJECT_DIR / "skills"
 AGENTS_DIR = PROJECT_DIR / "agents"
@@ -65,7 +65,7 @@ DEFAULT_BASELINE_K = 0.90
 # silently truncated large outputs (e.g. a ~25K-char autoport modeling file),
 # so the judge only saw the first ~16% and reported the file "cut off" — a
 # harness artifact, not a real failure. Set well above the largest expected
-# submission so the judge sees the whole file. See design doc §"Scoring model".
+# submission so the judge sees the whole file.
 JUDGE_SOURCE_LIMIT = 40000
 
 
@@ -292,9 +292,8 @@ def score_patterns(haystack: str, expected: list[str], forbidden: list[str]) -> 
 
     `haystack` is what we match against — see evaluate(): the submitted file
     PLUS the agent's response prose (extract_agent_response, not raw tool output).
-    This mirrors the INTERNAL NAD harness, which matches against `actualOutput`
-    (the agent's final response text), case-insensitively, per
-    internal/specs/claude_code_benchmarks.md.
+    Matching is against the agent's final response text (case-insensitively), not
+    raw tool output.
     Some expectedStrings are not source tokens at all — e.g. the autoport
     scenario expects `neuron_port/modeling_`, an output *path* the agent names
     in its narration but that never appears inside the .py file. Matching the
@@ -322,7 +321,7 @@ def evaluate(source: str, scenario: dict, use_judge: bool = False, dockerfile_di
     Pattern matching (approach "a") runs over BOTH so path-style expectedStrings
     that appear only in the agent's narration still match, while the LLM judge
     scores the SUBMITTED FILE only (the rubric explicitly judges "the final
-    Python file the agent pasted"). See design doc §"Scoring model".
+    Python file the agent pasted").
     """
     expected = scenario.get("expectedStrings", [])
     forbidden = scenario.get("forbiddenStrings", [])
@@ -616,10 +615,11 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--nad-root",
-        default=str(Path(__file__).parent / "nad"),
+        default=str(Path(__file__).parent.parent),
         help="Path to the NAD inputs root containing tests/, skills/, agents/. "
-        "Defaults to a legacy ./nad path (no longer vendored here). Point it at a NAD "
-        "checkout to score that repo's native assets.",
+        "Defaults to the repo root (this is a single-repo layout, so the gate scores "
+        "the repo's own assets). Point it at another NAD checkout to score that "
+        "repo's native assets instead.",
     )
     parser.add_argument("--task-id", default=None)
     parser.add_argument("--count", type=int, default=1)

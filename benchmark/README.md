@@ -27,19 +27,24 @@ The gate scores the repo's own `skills/` + `agents/` + `tests/` by running
 **Every PR is gated on demand via a label** (`.github/workflows/benchmark-external.yml`):
 
 - A maintainer reviews a PR and adds the **`run-benchmark`** label; that triggers
-  the gate on the PR. Contributors can't add the label (no write access), so
-  nothing runs until a maintainer opts the PR in. Pushing new commits does not
-  re-run it — the maintainer must re-apply the label (re-review).
+  the gate on the PR. Applying a label requires the repo's Triage role or above, so
+  a fork contributor (no role on this repo) can't opt themselves in — nothing runs
+  until a maintainer does. Pushing new commits does not re-run it — the maintainer
+  must re-apply the label (re-review).
 - It uses `pull_request_target` so the run can access the `KIRO_API_KEY` secret
   even for PRs from external forks (a plain `pull_request` run gets no secrets on
-  forks). The maintainer who labels a PR is vouching for it: the job runs the PR's
+  forks). The person who labels a PR is vouching for it: the job runs the PR's
   contributed skill code with the key present, so only label PRs you've reviewed.
+  Note that `contents: read` restricts only the `GITHUB_TOKEN` — it does **not**
+  shield `KIRO_API_KEY`, which is exposed to the untrusted PR code, so review the
+  diff before labeling.
 - **Requires** on the repo: a `KIRO_API_KEY` Actions secret (authenticates both the
   agent and the LLM judge; use a service-account key) and a `run-benchmark` label.
 
-`.github/workflows/benchmark.yml` is the same grader wired for **manual**
-`workflow_dispatch` runs (inputs: `subset`, `count`, `gate`). Its automatic
-`pull_request` trigger is commented out — uncomment it to also auto-gate PRs.
+The same workflow also supports **manual** `workflow_dispatch` runs from the Actions
+tab (inputs: `subset`, `count`, `gate`). Manual dispatch is restricted to users with
+write access, so it checks out the selected branch directly (trusted) rather than an
+untrusted PR head.
 
 ## Scoring
 
@@ -78,8 +83,8 @@ The gate fails if the overall pass rate is below `--gate` (default 90%).
 ```bash
 # On a PR (primary path): a maintainer adds the `run-benchmark` label to the PR.
 
-# Manually via CLI (workflow_dispatch on benchmark.yml):
-gh workflow run benchmark.yml -f subset=all -f count=1 -f gate=90
+# Manually via CLI (workflow_dispatch on benchmark-external.yml):
+gh workflow run benchmark-external.yml -f subset=all -f count=1 -f gate=90
 
 # Locally (needs Docker + KIRO_API_KEY):
 python benchmark/run_skill_tests.py --nad-root=. --subset=all --count=1 --judge --gate=90
